@@ -27,9 +27,11 @@ does not allow trusted-publisher setup until the package exists, the initial
 `2.0.0` publication uses a short-lived granular npm access token:
 
 1. Immediately before dispatch, create a granular token with the shortest
-   practical expiry and only the package-write access needed for the
-   `@nipe-solutions` scope. Enable CI-compatible publication when npm's account
-   policy requires it.
+   practical expiry. Scope its package and organization permissions only as
+   narrowly as npm permits for the initial `@nipe-solutions/readonly-view`
+   publication, grant the required package write access, and select the token's
+   `Bypass 2FA` option. Bypassing 2FA is required for this non-interactive direct
+   publication because GitHub Actions cannot enter a one-time password.
 2. Add it as an environment secret named `NPM_TOKEN` on the protected `npm`
    environment, not as a repository-wide secret. Only the `publish` job reads
    it.
@@ -40,10 +42,11 @@ does not allow trusted-publisher setup until the package exists, the initial
     - workflow filename: `release.yml`
     - GitHub environment: `npm`
 
-4. Delete the `NPM_TOKEN` GitHub environment secret and revoke the granular
-   token. For future versions, update the explicit release authorization and
-   remove `NODE_AUTH_TOKEN` from the publish step so npm authenticates through
-   the trusted publisher.
+4. Immediately after the trusted publisher is configured, delete the
+   `NPM_TOKEN` GitHub environment secret and revoke the granular token before
+   any further release work. For future versions, update the explicit release
+   authorization and remove `NODE_AUTH_TOKEN` from the publish step so npm
+   authenticates through the trusted publisher.
 
 The initial workflow uses the token for registry authentication and the
 publish job's OIDC permission for `--provenance`; it is not an OIDC-only
