@@ -71,6 +71,17 @@ for (const [route, heading, language] of legalRoutes) {
             expect(stylesheets).toEqual(
                 stylesheets.map(({ url }) => ({ status: 200, url })),
             );
+            if (width === 320 && route.startsWith('/de/')) {
+                const mastheadWidths = await page
+                    .locator('.masthead')
+                    .evaluate((masthead) => ({
+                        client: masthead.clientWidth,
+                        scroll: masthead.scrollWidth,
+                    }));
+                expect(mastheadWidths.scroll).toBeLessThanOrEqual(
+                    mastheadWidths.client,
+                );
+            }
             expect(
                 await page.evaluate(() => document.body.scrollWidth),
             ).toBeLessThanOrEqual(
