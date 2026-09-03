@@ -1,5 +1,5 @@
-import { isObjectLike } from './classify';
-import { DirectMutationError } from './errors';
+import { isObjectLike, unsupportedKind } from './classify';
+import { DirectMutationError, UnsupportedTypeError } from './errors';
 import type { DeepReadonly } from './public-types';
 
 const knownViews = new WeakSet<object>();
@@ -217,9 +217,32 @@ export function createMembrane(): Membrane {
         });
     }
 
+    function dateProperty(source: Date, property: PropertyKey): unknown {
+        const value: unknown = Reflect.get(source, property, source);
+        if (typeof value !== 'function') return value;
+        return cachedMethod(source, property, () => {
+            if (typeof property === 'string' && property.startsWith('set')) {
+                return () => mutation(source, property);
+            }
+            return (...arguments_: unknown[]) => {
+                const result: unknown = Reflect.apply(
+                    value,
+                    source,
+                    arguments_,
+                );
+                return wrap(result);
+            };
+        });
+    }
+
     function wrap<T>(value: T): DeepReadonly<T> {
         if (!isObjectLike(value)) return value as DeepReadonly<T>;
         if (knownViews.has(value)) return value as DeepReadonly<T>;
+
+        const rejectedKind = unsupportedKind(value);
+        if (rejectedKind !== undefined) {
+            throw new UnsupportedTypeError(rejectedKind);
+        }
 
         const cached = sourceToView.get(value);
         if (cached !== undefined) return cached as DeepReadonly<T>;
@@ -261,6 +284,8 @@ export function createMembrane(): Membrane {
                 return mutation(source, 'delete', property);
             },
             get(_target, property, receiver: object) {
+                if (source instanceof Date)
+                    return dateProperty(source, property);
                 if (source instanceof Map) {
                     return mapProperty(source, property, receiver);
                 }
