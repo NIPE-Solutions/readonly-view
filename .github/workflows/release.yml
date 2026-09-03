@@ -1,0 +1,58 @@
+name: Release
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: Exact package.json version
+                required: true
+            channel:
+                description: npm distribution tag
+                required: true
+                type: choice
+                options: [next, latest]
+            confirmation:
+                description: Type publish to confirm an npm release
+                required: true
+
+permissions:
+    contents: read
+
+jobs:
+    verify:
+        if: inputs.confirmation == 'publish'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 24
+                  cache: npm
+            - run: npm ci
+            - name: Verify requested version
+              env:
+                  REQUESTED_VERSION: ${{ inputs.version }}
+              run: test "$(node -p "require('./package.json').version")" = "$REQUESTED_VERSION"
+            - run: npm run release:check
+
+    publish:
+        needs: verify
+        runs-on: ubuntu-latest
+        environment: npm
+        permissions:
+            contents: read
+            id-token: write
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+            - run: npm ci
+            - name: Verify requested version
+              env:
+                  REQUESTED_VERSION: ${{ inputs.version }}
+              run: test "$(node -p "require('./package.json').version")" = "$REQUESTED_VERSION"
+            - run: npm run release:check
+            - name: Publish through npm trusted publishing
+              run: npm publish --access public --tag ${{ inputs.channel }}

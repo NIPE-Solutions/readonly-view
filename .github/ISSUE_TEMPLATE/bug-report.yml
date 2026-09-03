@@ -1,0 +1,33 @@
+name: Bug report
+description: Report incorrect runtime, type, or packaging behavior.
+title: 'bug: '
+labels: [bug]
+body:
+    - type: markdown
+      attributes:
+          value: Do not include private source data. Security reports belong in GitHub private vulnerability reporting.
+    - type: input
+      id: version
+      attributes:
+          label: ReadonlyView version
+          placeholder: 2.0.0-alpha.0
+      validations:
+          required: true
+    - type: textarea
+      id: reproduction
+      attributes:
+          label: Minimal reproduction
+          description: Include source value, operation, expected result, and actual result.
+      validations:
+          required: true
+    - type: input
+      id: environment
+      attributes:
+          label: Environment
+          placeholder: Node 24, TypeScript 6.0, Chromium
+      validations:
+          required: true
+    - type: textarea
+      id: context
+      attributes:
+          label: Additional context
