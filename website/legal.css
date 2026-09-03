@@ -1,0 +1,109 @@
+.legal-shell {
+    width: min(1120px, calc(100% - 80px));
+    margin: 0 auto;
+    padding: 88px 0 104px;
+}
+.legal-header {
+    max-width: 760px;
+    padding-bottom: 56px;
+    border-bottom: 1px solid var(--rule);
+}
+.legal-header h1 {
+    margin: 18px 0 24px;
+    font-size: clamp(48px, 7vw, 76px);
+    overflow-wrap: anywhere;
+    hyphens: auto;
+}
+.legal-kicker {
+    margin: 0;
+    color: var(--blue);
+    font-size: 14px;
+    font-weight: 650;
+}
+.legal-intro {
+    margin: 0;
+    max-width: 65ch;
+    color: #4c5158;
+    font-size: 19px;
+    line-height: 1.65;
+}
+.legal-content {
+    display: grid;
+    grid-template-columns: minmax(0, 720px) minmax(220px, 1fr);
+    gap: 88px;
+    padding-top: 64px;
+}
+.legal-content article {
+    min-width: 0;
+}
+.legal-content section + section {
+    margin-top: 52px;
+    padding-top: 52px;
+    border-top: 1px solid var(--rule);
+}
+.legal-content h2 {
+    margin: 0 0 18px;
+    font-size: 27px;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+}
+.legal-content p,
+.legal-content li {
+    max-width: 72ch;
+    color: #444950;
+    font-size: 17px;
+    line-height: 1.75;
+}
+.legal-content a,
+.legal-meta a {
+    color: #173c91;
+    text-decoration: underline;
+    text-decoration-color: #9db7ff;
+    text-underline-offset: 3px;
+}
+.legal-meta {
+    align-self: start;
+    position: sticky;
+    top: 104px;
+    padding-left: 22px;
+    border-left: 3px solid var(--blue);
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.65;
+}
+.legal-meta p {
+    margin: 0 0 20px;
+}
+.legal-meta strong {
+    color: var(--ink);
+}
+.language-switch {
+    display: inline-flex;
+    margin-top: 22px;
+}
+
+@media (max-width: 720px) {
+    .legal-shell {
+        width: min(100% - 40px, 720px);
+        padding: 56px 0 72px;
+    }
+    .legal-header {
+        padding-bottom: 40px;
+    }
+    .legal-header h1 {
+        font-size: clamp(38px, 12vw, 52px);
+    }
+    .legal-content {
+        grid-template-columns: 1fr;
+        gap: 56px;
+        padding-top: 48px;
+    }
+    .legal-content section + section {
+        margin-top: 40px;
+        padding-top: 40px;
+    }
+    .legal-meta {
+        position: static;
+        order: -1;
+    }
+}

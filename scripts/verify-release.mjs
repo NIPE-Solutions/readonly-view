@@ -12,6 +12,11 @@ function assert(condition, message) {
 }
 
 assert(pkg.name === '@nipe-solutions/readonly-view', 'Unexpected package name');
+assert(
+    pkg.homepage === 'https://readonly-view.nipesolutions.com',
+    'Homepage is stale',
+);
+assert(pkg.version === '2.0.0', 'Unexpected package version');
 assert(pkg.version === lock.version, 'package-lock root version is stale');
 assert(
     pkg.version === lock.packages[''].version,
@@ -19,7 +24,9 @@ assert(
 );
 assert(pkg.license === 'MIT', 'Package license must be MIT');
 assert(
-    pkg.files.length === 1 && pkg.files[0] === 'dist',
+    pkg.files.length === 2 &&
+        pkg.files.includes('dist') &&
+        pkg.files.includes('CHANGELOG.md'),
     'files allowlist changed',
 );
 assert(pkg.sideEffects === false, 'Package must remain side-effect free');
@@ -27,6 +34,15 @@ assert(
     pkg.repository.url.includes('NIPE-Solutions/readonly-view'),
     'Repository metadata is stale',
 );
+
+const vercel = JSON.parse(await readFile(resolve(root, 'vercel.json'), 'utf8'));
+assert(
+    vercel.buildCommand === 'npm run build:website',
+    'Unexpected Vercel build',
+);
+assert(vercel.framework === null, 'Unexpected Vercel framework');
+assert(vercel.installCommand === 'npm ci', 'Unexpected Vercel install');
+assert(vercel.outputDirectory === 'website/dist', 'Unexpected Vercel output');
 
 for (const file of [
     'LICENSE',

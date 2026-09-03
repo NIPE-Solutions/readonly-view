@@ -17,14 +17,13 @@ jobs:
     quality:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - uses: actions/setup-node@v7
               with:
                   node-version: 24
                   cache: npm
             - run: npm ci
-            - run: npm run check
-            - run: npm run package:artifact
+            - run: npm run release:check
             - name: Upload packed artifact
               uses: actions/upload-artifact@v7
               with:
@@ -34,9 +33,10 @@ jobs:
                   include-hidden-files: true
 
     node-22:
+        needs: quality
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - uses: actions/setup-node@v7
               with:
                   node-version: 22
@@ -47,13 +47,14 @@ jobs:
             - run: npm run test:package
 
     browser:
+        needs: quality
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
                 browser: [chromium, firefox, webkit]
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - uses: actions/setup-node@v7
               with:
                   node-version: 24
@@ -62,3 +63,13 @@ jobs:
             - run: npx playwright install --with-deps ${{ matrix.browser }}
             - run: npm run build
             - run: npm run test:browser -- --project=${{ matrix.browser }}
+            - name: Upload Playwright failure diagnostics
+              if: failure()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: playwright-${{ matrix.browser }}-failure
+                  path: |
+                      playwright-report/
+                      test-results/
+                  if-no-files-found: warn
+                  retention-days: 7

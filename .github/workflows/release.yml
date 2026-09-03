@@ -12,7 +12,7 @@ on:
                 type: choice
                 options: [next, latest]
             confirmation:
-                description: Type publish VERSION with CHANNEL
+                description: Type publish 2.0.0 with latest
                 required: true
 
 permissions:
@@ -22,20 +22,23 @@ jobs:
     authorize:
         runs-on: ubuntu-latest
         steps:
-            - name: Require main and exact confirmation
+            - name: Require main and exact stable release confirmation
               env:
                   ACTUAL_REF: ${{ github.ref }}
+                  ACTUAL_VERSION: ${{ inputs.version }}
+                  ACTUAL_CHANNEL: ${{ inputs.channel }}
                   ACTUAL_CONFIRMATION: ${{ inputs.confirmation }}
-                  EXPECTED_CONFIRMATION: publish ${{ inputs.version }} with ${{ inputs.channel }}
               run: |
                   test "$ACTUAL_REF" = "refs/heads/main"
-                  test "$ACTUAL_CONFIRMATION" = "$EXPECTED_CONFIRMATION"
+                  test "$ACTUAL_VERSION" = "2.0.0"
+                  test "$ACTUAL_CHANNEL" = "latest"
+                  test "$ACTUAL_CONFIRMATION" = "publish 2.0.0 with latest"
 
     verify:
         needs: authorize
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - uses: actions/setup-node@v7
               with:
                   node-version: 24
@@ -50,7 +53,20 @@ jobs:
               env:
                   REQUESTED_CHANNEL: ${{ inputs.channel }}
               run: node scripts/verify-release-channel.mjs "$REQUESTED_CHANNEL"
-            - run: node scripts/verify-registry.mjs unpublished
+            - name: Verify 2.0.0 is absent from npm
+              run: node scripts/verify-registry.mjs unpublished
+            - name: Assert exactly one verified tarball
+              run: |
+                  shopt -s nullglob
+                  tarballs=(.artifacts/*.tgz)
+                  test "${#tarballs[@]}" -eq 1
+            - name: Upload verified release artifact
+              uses: actions/upload-artifact@v7
+              with:
+                  name: release-package-${{ github.sha }}
+                  path: .artifacts/*.tgz
+                  if-no-files-found: error
+                  include-hidden-files: true
 
     browser:
         needs: verify
@@ -60,7 +76,7 @@ jobs:
             matrix:
                 browser: [chromium, firefox, webkit]
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - uses: actions/setup-node@v7
               with:
                   node-version: 24
@@ -78,19 +94,38 @@ jobs:
             contents: read
             id-token: write
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - uses: actions/setup-node@v7
               with:
                   node-version: 24
                   registry-url: https://registry.npmjs.org
-            - run: npm ci
+            - name: Download verified release artifact
+              uses: actions/download-artifact@v8
+              with:
+                  name: release-package-${{ github.sha }}
+                  path: .artifacts
             - name: Verify requested version
               env:
                   REQUESTED_VERSION: ${{ inputs.version }}
               run: test "$(node -p "require('./package.json').version")" = "$REQUESTED_VERSION"
-            - run: npm run release:check
-            - name: Publish through npm trusted publishing
-              run: npm publish --access public --tag ${{ inputs.channel }}
+            - name: Select the single verified tarball
+              run: |
+                  shopt -s nullglob
+                  tarballs=(.artifacts/*.tgz)
+                  test "${#tarballs[@]}" -eq 1
+                  printf 'VERIFIED_TARBALL=%s\n' "${tarballs[0]}" >> "$GITHUB_ENV"
+            - name: Reconfirm 2.0.0 is absent from npm
+              run: node scripts/verify-registry.mjs unpublished
+            - name: Publish verified tarball for initial package bootstrap
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  REQUESTED_CHANNEL: ${{ inputs.channel }}
+              run: |
+                  test -n "$NODE_AUTH_TOKEN"
+                  npm publish "$VERIFIED_TARBALL" \
+                    --access public \
+                    --tag "$REQUESTED_CHANNEL" \
+                    --provenance
             - name: Verify registry propagation
               run: node scripts/verify-registry.mjs published
 
@@ -100,7 +135,7 @@ jobs:
         permissions:
             contents: write
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - name: Create GitHub release
               env:
                   GH_TOKEN: ${{ github.token }}
@@ -109,5 +144,6 @@ jobs:
               run: >-
                   gh release create "v$RELEASE_VERSION"
                   --title "ReadonlyView v$RELEASE_VERSION"
+                  --target "$GITHUB_SHA"
                   --generate-notes
                   ${{ inputs.channel == 'next' && '--prerelease' || '' }}

@@ -16,9 +16,17 @@ export default defineConfig({
     reporter: process.env.CI ? [['html', { open: 'never' }], ['line']] : 'line',
     use: { baseURL: 'http://127.0.0.1:4173', trace: 'on-first-retry' },
     projects,
-    webServer: {
-        command: 'npm run build:dist && vite --host 127.0.0.1 --port 4173',
-        port: 4173,
-        reuseExistingServer: !process.env.CI,
-    },
+    webServer: [
+        {
+            command: 'vite --host 127.0.0.1 --port 4173 --strictPort',
+            port: 4173,
+            reuseExistingServer: !process.env.CI,
+        },
+        {
+            command:
+                'npm run build:website && vite preview --config vite.website.config.ts --host 127.0.0.1 --port 42873 --strictPort',
+            port: 42873,
+            reuseExistingServer: !process.env.CI,
+        },
+    ],
 });

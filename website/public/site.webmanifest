@@ -1,0 +1,20 @@
+{
+    "name": "ReadonlyView",
+    "short_name": "ReadonlyView",
+    "description": "A deeply readonly, lazy, live view over mutable JavaScript data.",
+    "icons": [
+        {
+            "src": "/favicon-32x32.png",
+            "sizes": "32x32",
+            "type": "image/png"
+        },
+        {
+            "src": "/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#15171a",
+    "background_color": "#f7f8f6",
+    "display": "standalone"
+}

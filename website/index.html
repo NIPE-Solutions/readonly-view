@@ -10,12 +10,34 @@
         <meta property="og:type" content="website" />
         <meta property="og:title" content="ReadonlyView" />
         <meta
+            property="og:url"
+            content="https://readonly-view.nipesolutions.com/"
+        />
+        <meta
             property="og:description"
             content="A deeply readonly, lazy, live view over mutable JavaScript data."
         />
-        <meta property="og:image" content="/og.png" />
+        <meta
+            property="og:image"
+            content="https://readonly-view.nipesolutions.com/og.png"
+        />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="theme-color" content="#15171a" />
         <title>ReadonlyView — a live readonly membrane</title>
+        <link rel="canonical" href="https://readonly-view.nipesolutions.com/" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon-32x32.png"
+        />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/apple-touch-icon.png"
+        />
+        <link rel="manifest" href="/site.webmanifest" />
         <link rel="stylesheet" href="./styles.css" />
     </head>
     <body>
@@ -34,9 +56,6 @@
         <main id="top">
             <section class="hero">
                 <div class="hero-copy">
-                    <p class="status">
-                        <span></span> v2 alpha · zero runtime dependencies
-                    </p>
                     <h1>The source stays mutable.<br />The view does not.</h1>
                     <p class="lede">
                         A deeply readonly, lazy, live view over mutable
@@ -88,8 +107,11 @@
                     ><span>Every supported exposure route is wrapped.</span>
                 </article>
                 <article>
-                    <strong>Small</strong
-                    ><span>1.9 kB minified + gzip baseline.</span>
+                    <strong>v2</strong
+                    ><span
+                        >Zero runtime dependencies. 1.9 kB minified + gzip
+                        baseline.</span
+                    >
                 </article>
             </section>
 
@@ -98,6 +120,7 @@
                     <nav aria-label="Documentation">
                         <a href="#introduction">Introduction</a
                         ><a href="#ownership">Ownership model</a
+                        ><a href="#examples">Examples</a
                         ><a href="#guarantees">Guarantees</a
                         ><a href="#types">Supported types</a
                         ><a href="#objects">Objects & arrays</a
@@ -132,6 +155,104 @@
                             observe replacement, addition, deletion, collection
                             changes, and Date changes.
                         </p>
+                    </section>
+                    <section id="examples">
+                        <h2>Examples</h2>
+                        <p>
+                            Each example uses the public API and can be copied
+                            into a modern JavaScript project. TypeScript rejects
+                            the mutation lines before they reach runtime.
+                        </p>
+                        <pre><code>import { readonlyView } from '@nipe-solutions/readonly-view'</code></pre>
+                        <div class="example-grid">
+                            <article class="example">
+                                <h3>Nested protection</h3>
+                                <pre><code>const source = { user: { name: 'Alice' } }
+const view = readonlyView(source)
+
+Reflect.set(view.user, 'name', 'Eve') // throws</code></pre>
+                            </article>
+                            <article class="example">
+                                <h3>Owner-side live updates</h3>
+                                <pre><code>import { readonlyView } from '@nipe-solutions/readonly-view'
+
+const source = { user: { name: 'Alice' } }
+const view = readonlyView(source)
+
+source.user.name = 'Bob'
+console.log(view.user.name) // 'Bob'</code></pre>
+                            </article>
+                            <article class="example">
+                                <h3>Arrays</h3>
+                                <pre><code>const source = { items: [{ id: 1 }] }
+const view = readonlyView(source)
+
+source.items.push({ id: 2 })
+view.items.map(item =&gt; item.id) // [1, 2]
+view.items.push({ id: 3 }) // throws</code></pre>
+                            </article>
+                            <article class="example">
+                                <h3>Map and Set</h3>
+                                <pre><code>const source = {
+  map: new Map([['selected', { id: 1 }]]),
+  set: new Set([{ id: 1 }]),
+}
+const view = readonlyView(source)
+
+view.map.get('selected')?.id // 1
+view.set.clear() // throws</code></pre>
+                            </article>
+                            <article class="example">
+                                <h3>Date</h3>
+                                <pre><code>const source = { updatedAt: new Date('2026-09-03') }
+const view = readonlyView(source)
+
+source.updatedAt.setUTCDate(4)
+view.updatedAt.getUTCDate() // 4
+view.updatedAt.setUTCDate(5) // throws</code></pre>
+                            </article>
+                            <article class="example">
+                                <h3>Circular references</h3>
+                                <pre><code>const source = { label: 'root' }
+source.self = source
+const view = readonlyView(source)
+
+view.self === view // true</code></pre>
+                            </article>
+                            <article class="example">
+                                <h3>Shared identity</h3>
+                                <pre><code>const shared = { id: 1 }
+const source = {
+  items: [shared],
+  map: new Map([['selected', shared]]),
+  set: new Set([shared]),
+}
+const view = readonlyView(source)
+
+view.items[0] === view.map.get('selected') // true
+[...view.set][0] === view.items[0] // true</code></pre>
+                            </article>
+                            <article class="example">
+                                <h3>Mutation rejection</h3>
+                                <pre><code>import {
+  DirectMutationError,
+  readonlyView,
+} from '@nipe-solutions/readonly-view'
+
+const source = { item: { id: 1 } }
+const view = readonlyView(source)
+
+try {
+  Reflect.set(view.item, 'id', 2)
+} catch (error) {
+  if (error instanceof DirectMutationError) {
+    console.log(error.name) // 'DirectMutationError'
+  } else {
+    throw error
+  }
+}</code></pre>
+                            </article>
+                        </div>
                     </section>
                     <section id="guarantees">
                         <h2>Runtime guarantees</h2>
@@ -361,9 +482,13 @@ source.count += 1</code></pre>
             </div>
         </main>
         <footer>
-            <span>ReadonlyView</span
-            ><span>One focused primitive in the NIPE collection.</span
-            ><span>MIT</span>
+            <span>ReadonlyView · MIT</span>
+            <nav aria-label="Legal">
+                <a href="/privacy/">Privacy Policy</a>
+                <a href="/impressum/">Impressum</a>
+                <a href="/de/datenschutz/">Datenschutzerklärung</a>
+                <a href="/de/impressum/">Impressum (DE)</a>
+            </nav>
         </footer>
         <script type="module" src="./main.ts"></script>
     </body>

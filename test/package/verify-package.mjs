@@ -20,6 +20,7 @@ export async function verifyPackage() {
         const [packed] = JSON.parse(stdout);
         const files = packed.files.map((entry) => entry.path).sort();
         const expectedFiles = [
+            'CHANGELOG.md',
             'LICENSE',
             'README.md',
             'dist/index.cjs',

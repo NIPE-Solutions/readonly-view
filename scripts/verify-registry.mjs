@@ -10,7 +10,15 @@ const pkg = JSON.parse(
 const specifier = `${pkg.name}@${pkg.version}`;
 const mode = process.argv[2];
 
-async function registryVersion() {
+function npmErrorCode(error) {
+    try {
+        return JSON.parse(error.stdout)?.error?.code;
+    } catch {
+        return undefined;
+    }
+}
+
+async function registryVersion({ allowNotFound = false } = {}) {
     try {
         const { stdout } = await exec('npm', [
             'view',
@@ -19,19 +27,20 @@ async function registryVersion() {
             '--json',
         ]);
         return JSON.parse(stdout);
-    } catch {
-        return undefined;
+    } catch (error) {
+        if (allowNotFound && npmErrorCode(error) === 'E404') return undefined;
+        throw error;
     }
 }
 
 if (mode === 'unpublished') {
-    if ((await registryVersion()) !== undefined) {
+    if ((await registryVersion({ allowNotFound: true })) !== undefined) {
         throw new Error(`${specifier} already exists on npm`);
     }
     console.log(`${specifier} is available on npm`);
 } else if (mode === 'published') {
     for (let attempt = 1; attempt <= 12; attempt += 1) {
-        if ((await registryVersion()) === pkg.version) {
+        if ((await registryVersion({ allowNotFound: true })) === pkg.version) {
             console.log(`${specifier} is visible on npm`);
             process.exit(0);
         }
