@@ -45,6 +45,7 @@
     margin: 0 0 18px;
     font-size: 27px;
     letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
 }
 .legal-content p,
 .legal-content li {
