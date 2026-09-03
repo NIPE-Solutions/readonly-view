@@ -1,8 +1,8 @@
-# ImmuView v2 Implementation Plan
+# ReadonlyView v2 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rebuild ImmuView as a production-grade, deeply readonly, lazy, live JavaScript membrane with a minimal API, verified package, documentation website, and release-ready automation.
+**Goal:** Rebuild and rename ImmuView as ReadonlyView: a production-grade, deeply readonly, lazy, live JavaScript membrane with a minimal API, verified package, documentation website, and release-ready automation.
 
 **Architecture:** Each `readonlyView` call owns a WeakMap-backed membrane that maps sources to invariant-safe shadow proxies and maps views back to sources. Generic objects/functions and dedicated Array, Map, Set, and Date adapters delegate reads live, wrap every exposed supported value, and reject every mutation route; unsupported built-ins fail lazily and explicitly.
 
@@ -12,11 +12,11 @@
 
 ## Global Constraints
 
-- Package identity remains `immuview`; development version is `2.0.0-alpha.0`; do not publish.
+- Package identity is `@nipe-solutions/readonly-view`, product identity is `ReadonlyView`, repository identity is `NIPE-Solutions/readonly-view`, and development version is `2.0.0-alpha.0`; do not publish.
 - Runtime support is Node.js 22 and 24 plus current evergreen Chromium, Firefox, and WebKit; development and release use Node.js 24 LTS.
 - Runtime dependency count is exactly zero.
 - Public exports are exactly `readonlyView`, `isReadonlyView`, `DirectMutationError`, `UnsupportedTypeError`, and `DeepReadonly`.
-- ImmuView never intentionally mutates, freezes, seals, prevents extensions on, serializes, or eagerly traverses a source.
+- ReadonlyView never intentionally mutates, freezes, seals, prevents extensions on, serializes, or eagerly traverses a source.
 - Separate top-level calls create separate membranes; identity is stable inside a membrane; passing an existing view is idempotent.
 - Direct source proxies remain subject to the documented trust limitation.
 - Unsupported built-ins throw `UnsupportedTypeError` when first reached.
@@ -39,7 +39,7 @@
 
 - [ ] **Step 1: Replace package metadata and scripts**
 
-Set version `2.0.0-alpha.0`, `type: "module"`, `engines.node: ">=22 <25"`, zero runtime dependencies, and:
+Set name `@nipe-solutions/readonly-view`, version `2.0.0-alpha.0`, `type: "module"`, `engines.node: ">=22 <25"`, zero runtime dependencies, and:
 
 ```json
 {
@@ -406,7 +406,7 @@ git commit -m "test: add adversarial randomized and example coverage"
 
 - [ ] **Step 1: Write failing package-contract tests**
 
-Assert allowed tarball files, exact five exports, working ESM/require/types/bundler, tree shaking, metadata, and rejected private imports such as `immuview/src/membrane`.
+Assert allowed tarball files, exact five exports, working ESM/require/types/bundler, tree shaking, metadata, and rejected private imports such as `@nipe-solutions/readonly-view/src/membrane`.
 
 - [ ] **Step 2: Run `npm run test:package` and confirm failure**
 
@@ -546,7 +546,7 @@ git commit -m "docs: document the focused v2 ownership model"
 - Modify: `package.json`
 
 **Interfaces:**
-- Consumes: built ImmuView and docs.
+- Consumes: built ReadonlyView and docs.
 - Produces: framework-free static site and `dev`, `build:website`, `test:website`.
 
 - [ ] **Step 1: Define collection-ready visual tokens**
@@ -576,7 +576,7 @@ npm run test:website
 npm run build:website
 npm run test:browser -- --grep "documentation"
 git add website vite.website.config.ts scripts test/browser/website.spec.ts package.json package-lock.json
-git commit -m "docs: add the collection-ready ImmuView website"
+git commit -m "docs: add the collection-ready ReadonlyView website"
 ```
 
 ### Task 14: GitHub hygiene, CI, and guarded release
@@ -659,9 +659,9 @@ Record exact test counts, browser projects, sizes, benchmark environment/summary
 ```bash
 git diff --check
 git status --short
-npm view immuview@2.0.0-alpha.0 version || true
+npm view @nipe-solutions/readonly-view@2.0.0-alpha.0 version || true
 git add docs/releases/v2-alpha-readiness.md README.md docs scripts/size-budget.json src test
-git commit -m "chore: complete the ImmuView v2 alpha audit"
+git commit -m "chore: complete the ReadonlyView v2 alpha audit"
 ```
 
 Expected: registry lookup finds no v2 prerelease; nothing is published, tagged, pushed, or released.
@@ -675,4 +675,3 @@ git status --short --branch
 ```
 
 Expected: both gates pass and the working tree is clean.
-

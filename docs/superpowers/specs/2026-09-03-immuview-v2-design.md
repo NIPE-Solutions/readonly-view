@@ -1,4 +1,4 @@
-# ImmuView v2 Design Specification
+# ReadonlyView v2 Design Specification
 
 ## Status
 
@@ -6,12 +6,12 @@ Approved in conversation on 2026-09-03. This document defines the semantic and e
 
 ## Product definition
 
-ImmuView creates a deeply readonly, lazy, live view over mutable JavaScript data. It is a runtime-enforced readonly membrane with matching TypeScript readonly types.
+ReadonlyView creates a deeply readonly, lazy, live view over mutable JavaScript data. It is a runtime-enforced readonly membrane with matching TypeScript readonly types.
 
-ImmuView is not a state manager, store, reactive primitive, mutation API, validator, merge utility, snapshot, clone, or security sandbox. The source owner mutates the source directly. Consumers receive the view.
+ReadonlyView is not a state manager, store, reactive primitive, mutation API, validator, merge utility, snapshot, clone, or security sandbox. The source owner mutates the source directly. Consumers receive the view.
 
 ```ts
-import { readonlyView } from 'immuview'
+import { readonlyView } from '@nipe-solutions/readonly-view'
 
 const source = { user: { name: 'Alice', roles: ['admin'] } }
 const view = readonlyView(source)
@@ -41,13 +41,13 @@ function readonlyView<T>(source: T): DeepReadonly<T>
 function isReadonlyView(value: unknown): boolean
 ```
 
-Primitives are returned unchanged. Passing an ImmuView view to `readonlyView` returns the same view.
+Primitives are returned unchanged. Passing a ReadonlyView view to `readonlyView` returns the same view.
 
 ## Core guarantees
 
 - Writes made through a view are rejected with `DirectMutationError`.
 - Supported nested values reachable through a view are protected lazily.
-- ImmuView never intentionally writes to, freezes, seals, prevents extensions on, changes descriptors of, changes prototypes of, serializes, or eagerly traverses the source.
+- ReadonlyView never intentionally writes to, freezes, seals, prevents extensions on, changes descriptors of, changes prototypes of, serializes, or eagerly traverses the source.
 - Owner-side mutations remain visible through an existing view, including property replacement, addition and deletion and collection/Date changes.
 - One source object maps to one view inside a membrane, including across object fields, arrays, collections, descriptors, iterators, and cycles.
 - Circular graphs terminate and preserve identity.
@@ -56,7 +56,7 @@ Primitives are returned unchanged. Passing an ImmuView view to `readonlyView` re
 
 ## Non-guarantees and trust model
 
-- ImmuView is not a security boundary or capability sandbox.
+- ReadonlyView is not a security boundary or capability sandbox.
 - It cannot revoke or protect another reference to the source.
 - A function can mutate independently captured state or cause arbitrary external side effects.
 - A getter can cause arbitrary side effects.
@@ -81,7 +81,7 @@ Separate top-level calls create independent membranes:
 readonlyView(source) !== readonlyView(source)
 ```
 
-Identity is guaranteed inside each membrane. Existing ImmuView inputs are idempotent:
+Identity is guaranteed inside each membrane. Existing ReadonlyView inputs are idempotent:
 
 ```ts
 const first = readonlyView(source)
@@ -92,7 +92,7 @@ The implementation registers a source/view pair before nested wrapping can occur
 
 ## Shadow targets and Proxy invariants
 
-ImmuView does not directly proxy arbitrary sources. Direct proxying cannot safely replace the value of a non-configurable, non-writable data property, because the Proxy `get` invariant requires the exact target value and would leak a mutable child.
+ReadonlyView does not directly proxy arbitrary sources. Direct proxying cannot safely replace the value of a non-configurable, non-writable data property, because the Proxy `get` invariant requires the exact target value and would leak a mutable child.
 
 Instead, views use controlled shadows:
 
@@ -156,7 +156,7 @@ Getters execute with the readonly receiver and returned values are wrapped. A se
 
 Generic functions retain their call signature in `DeepReadonly<T>` and are represented by callable views when runtime wrapping is needed. A normal `view.method()` invocation calls the source function with the readonly receiver. A write through `this` therefore reaches the membrane and throws.
 
-Calls with another explicit `this` preserve normal JavaScript call semantics; ImmuView protects only values reached through the view. Function-owned object properties are deeply wrapped. Construct calls, where supported, wrap the returned object and never expose an unwrapped result.
+Calls with another explicit `this` preserve normal JavaScript call semantics; ReadonlyView protects only values reached through the view. Function-owned object properties are deeply wrapped. Construct calls, where supported, wrap the returned object and never expose an unwrapped result.
 
 Dedicated Map, Set, and Date adapters call native methods with valid source receivers and wrap outputs. Generic method handling never binds these native methods blindly.
 
@@ -230,7 +230,7 @@ No process-global strong cache retains sources or views. WeakMap entries become 
 
 ## Package and compatibility
 
-The package has zero runtime dependencies and uses current stable development dependencies at implementation time. Dependency versions are pinned by the npm lockfile and maintained with Renovate under a low-noise grouped policy.
+The npm package is `@nipe-solutions/readonly-view`, the product name is ReadonlyView, and the repository is `NIPE-Solutions/readonly-view`. The public factory remains `readonlyView`. The package has zero runtime dependencies and uses current stable development dependencies at implementation time. Dependency versions are pinned by the npm lockfile and maintained with Renovate under a low-noise grouped policy.
 
 Outputs:
 
@@ -312,7 +312,7 @@ The documentation set includes introduction, getting started, core/ownership mod
 
 The website is a framework-free Vite/TypeScript/CSS static site. It follows the reference repository's philosophy and information architecture: strong first-screen explanation, evidence-oriented feature sections, persistent docs navigation, responsive reading layouts, searchable or easily navigable API content, real runnable examples, and release/support information. Its visual identity is minimal, technical, premium, and consistent with a future collection of small NIPE-quality primitives.
 
-Collection readiness means shared-looking design tokens, naming conventions, navigation slots, content components, and visual rhythm that could later be reused. It does not introduce `@nipe-solutions/core`, a runtime design package, React, or premature cross-repository abstractions. ImmuView remains independently buildable and publishable.
+Collection readiness means shared-looking design tokens, naming conventions, navigation slots, content components, and visual rhythm that could later be reused. It does not introduce `@nipe-solutions/core`, a runtime design package, React, or premature cross-repository abstractions. ReadonlyView remains independently buildable and publishable.
 
 README and website examples have mirrored compile/runtime tests. Interactive examples execute the real built library and show both rejected view mutations and visible source-side changes.
 
@@ -327,7 +327,7 @@ The v1 API is removed:
 - `internalSet`, validation, error-handler options, validation errors, deep merge, and public internals are removed;
 - the owner mutates the source directly.
 
-The migration guide explains the narrower ownership model and points existing users to the retained v1 tags. No compatibility layer ships in v2.
+The migration guide is explicitly titled “ImmuView v1 to ReadonlyView v2,” explains the package rename and narrower ownership model, and points existing users to the retained v1 tags. No compatibility layer ships in v2.
 
 ## CI and release
 
