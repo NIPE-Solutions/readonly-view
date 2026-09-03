@@ -368,7 +368,7 @@ footer nav {
 }
 @media (max-width: 720px) {
     .masthead {
-        grid-template-columns: 1fr auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         padding: 0 18px;
     }
     .masthead nav {
