@@ -1,21 +1,14 @@
-import { readonly } from './ImmuView';
+import type { DeepReadonly } from './public-types';
 
-export default readonly;
-export {
-    // errors
-    DirectMutationError,
-    ValidationError,
-    ErrorHandler,
+export { DirectMutationError, UnsupportedTypeError } from './errors';
+export type { DeepReadonly } from './public-types';
 
-    // utils
-    deepMerge,
-    isObject,
+export function readonlyView<T>(source: T): DeepReadonly<T> {
+    void source;
+    throw new Error('readonlyView is not implemented');
+}
 
-    // types
-    ReadonlyState,
-    ReadonlyStateOptions,
-    Validator,
-
-    // utility - export again for convenience
-    readonly,
-} from './ImmuView';
+export function isReadonlyView(value: unknown): boolean {
+    void value;
+    return false;
+}

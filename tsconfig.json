@@ -20,6 +20,6 @@
         "noUnusedParameters": true,
         "types": ["node", "vitest/globals"]
     },
-    "include": ["test/setup.ts", "scripts", "*.config.ts", "*.config.js"],
-    "exclude": ["dist", "coverage", "website/dist", "src"]
+    "include": ["src", "test", "scripts", "*.config.ts", "*.config.js"],
+    "exclude": ["dist", "coverage", "website/dist"]
 }
