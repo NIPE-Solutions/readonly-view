@@ -85,14 +85,19 @@ for (const [route, heading, language] of legalRoutes) {
             const layout = await page.evaluate(() => {
                 const viewport = document.documentElement.clientWidth;
                 const overflow = Array.from(
-                    document.querySelectorAll<HTMLElement>('body *'),
+                    document.querySelectorAll<HTMLElement>('body, body *'),
                 ).flatMap((element) => {
                     const rect = element.getBoundingClientRect();
-                    if (rect.left >= 0 && Math.ceil(rect.right) <= viewport) {
+                    if (
+                        rect.left >= 0 &&
+                        Math.ceil(rect.right) <= viewport &&
+                        element.scrollWidth <= element.clientWidth
+                    ) {
                         return [];
                     }
                     return [
                         {
+                            client: element.clientWidth,
                             element:
                                 element.tagName.toLowerCase() +
                                 (element.className
@@ -100,6 +105,7 @@ for (const [route, heading, language] of legalRoutes) {
                                     : ''),
                             left: Number(rect.left.toFixed(2)),
                             right: Number(rect.right.toFixed(2)),
+                            scroll: element.scrollWidth,
                         },
                     ];
                 });
