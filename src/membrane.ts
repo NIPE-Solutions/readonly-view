@@ -105,6 +105,118 @@ export function createMembrane(): Membrane {
         });
     }
 
+    function unwrapSameMembrane(value: unknown): unknown {
+        return isObjectLike(value) ? (viewToSource.get(value) ?? value) : value;
+    }
+
+    function wrapIterator(
+        iterator: Iterator<unknown>,
+    ): IterableIterator<unknown> {
+        return {
+            next(): IteratorResult<unknown> {
+                const result = iterator.next();
+                return result.done
+                    ? result
+                    : { done: false, value: wrap(result.value) };
+            },
+            [Symbol.iterator]() {
+                return this;
+            },
+        };
+    }
+
+    function mapProperty(
+        source: Map<unknown, unknown>,
+        property: PropertyKey,
+        receiver: object,
+    ): unknown {
+        if (property === 'size') return source.size;
+        return cachedMethod(source, property, () => {
+            if (
+                property === 'set' ||
+                property === 'delete' ||
+                property === 'clear'
+            ) {
+                return () => mutation(source, String(property));
+            }
+            if (property === 'get') {
+                return (key: unknown) =>
+                    wrap(source.get(unwrapSameMembrane(key)));
+            }
+            if (property === 'has') {
+                return (key: unknown) => source.has(unwrapSameMembrane(key));
+            }
+            if (property === 'forEach') {
+                return (
+                    callback: (
+                        value: unknown,
+                        key: unknown,
+                        map: object,
+                    ) => void,
+                ) =>
+                    source.forEach((value, key) =>
+                        callback(wrap(value), wrap(key), receiver),
+                    );
+            }
+            const method: unknown = Reflect.get(source, property, source);
+            return typeof method === 'function'
+                ? () =>
+                      wrapIterator(
+                          Reflect.apply(
+                              method,
+                              source,
+                              [],
+                          ) as Iterator<unknown>,
+                      )
+                : wrap(method);
+        });
+    }
+
+    function setProperty(
+        source: Set<unknown>,
+        property: PropertyKey,
+        receiver: object,
+    ): unknown {
+        if (property === 'size') return source.size;
+        return cachedMethod(source, property, () => {
+            if (
+                property === 'add' ||
+                property === 'delete' ||
+                property === 'clear'
+            ) {
+                return () => mutation(source, String(property));
+            }
+            if (property === 'has') {
+                return (value: unknown) =>
+                    source.has(unwrapSameMembrane(value));
+            }
+            if (property === 'forEach') {
+                return (
+                    callback: (
+                        value: unknown,
+                        second: unknown,
+                        set: object,
+                    ) => void,
+                ) =>
+                    source.forEach((value) => {
+                        const wrapped = wrap(value);
+                        callback(wrapped, wrapped, receiver);
+                    });
+            }
+            const method: unknown = Reflect.get(source, property, source);
+            return typeof method === 'function'
+                ? () =>
+                      wrapIterator(
+                          Reflect.apply(
+                              method,
+                              source,
+                              [],
+                          ) as Iterator<unknown>,
+                      )
+                : wrap(method);
+        });
+    }
+
     function wrap<T>(value: T): DeepReadonly<T> {
         if (!isObjectLike(value)) return value as DeepReadonly<T>;
         if (knownViews.has(value)) return value as DeepReadonly<T>;
@@ -149,6 +261,12 @@ export function createMembrane(): Membrane {
                 return mutation(source, 'delete', property);
             },
             get(_target, property, receiver: object) {
+                if (source instanceof Map) {
+                    return mapProperty(source, property, receiver);
+                }
+                if (source instanceof Set) {
+                    return setProperty(source, property, receiver);
+                }
                 if (Array.isArray(source) && property === 'constructor') {
                     return Array;
                 }
@@ -237,11 +355,7 @@ export function createMembrane(): Membrane {
     }
 
     return {
-        unwrapSameMembrane(value: unknown): unknown {
-            return isObjectLike(value)
-                ? (viewToSource.get(value) ?? value)
-                : value;
-        },
+        unwrapSameMembrane,
         wrap,
     };
 }
