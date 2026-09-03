@@ -24,6 +24,7 @@
 ### Task 1: Bilingual legal routes and production website metadata
 
 **Files:**
+
 - Create: `website/privacy/index.html`
 - Create: `website/impressum/index.html`
 - Create: `website/de/datenschutz/index.html`
@@ -43,6 +44,7 @@
 - Modify: `test/integration/docs-examples.test.ts`
 
 **Interfaces:**
+
 - Consumes: existing `.masthead`, `.brand`, footer, color tokens, and `npm run build:website`.
 - Produces: four stable legal routes, language cross-links, canonical production URLs, and multi-page Vite output under `website/dist`.
 - Produces: a crisp ReadonlyView tab-icon family derived from the existing `R` brand mark.
@@ -53,10 +55,22 @@ Extend `scripts/verify-website.mjs` to read all five built HTML files and assert
 
 ```js
 const pages = new Map([
-    ['privacy/index.html', ['Privacy Policy', 'Vercel Inc.', 'no non-essential cookies']],
-    ['impressum/index.html', ['Impressum', 'NIPE Solutions e.U.', 'ATU78464412']],
-    ['de/datenschutz/index.html', ['Datenschutzerklärung', 'Vercel Inc.', 'Datenschutzbehörde']],
-    ['de/impressum/index.html', ['Impressum', 'NIPE Solutions e.U.', 'FN 585066t']],
+    [
+        'privacy/index.html',
+        ['Privacy Policy', 'Vercel Inc.', 'no non-essential cookies'],
+    ],
+    [
+        'impressum/index.html',
+        ['Impressum', 'NIPE Solutions e.U.', 'ATU78464412'],
+    ],
+    [
+        'de/datenschutz/index.html',
+        ['Datenschutzerklärung', 'Vercel Inc.', 'Datenschutzbehörde'],
+    ],
+    [
+        'de/impressum/index.html',
+        ['Impressum', 'NIPE Solutions e.U.', 'FN 585066t'],
+    ],
 ]);
 ```
 
@@ -112,9 +126,7 @@ const source = {
 const view = readonlyView(source);
 expect(view.items[0]).toBe(view.map.get('selected'));
 expect([...view.set][0]).toBe(view.items[0]);
-expect(() => Reflect.set(view.items[0], 'id', 2)).toThrow(
-    DirectMutationError,
-);
+expect(() => Reflect.set(view.items[0], 'id', 2)).toThrow(DirectMutationError);
 ```
 
 - [ ] **Step 6: Add browser route coverage**
@@ -124,8 +136,12 @@ Add a Playwright test that opens each route and checks its heading, language lin
 ```ts
 for (const [route, heading] of legalRoutes) {
     await page.goto(route);
-    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
-    expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(
+    await expect(
+        page.getByRole('heading', { level: 1, name: heading }),
+    ).toBeVisible();
+    expect(
+        await page.evaluate(() => document.body.scrollWidth),
+    ).toBeLessThanOrEqual(
         await page.evaluate(() => document.documentElement.clientWidth),
     );
 }
@@ -142,6 +158,7 @@ Commit: `feat(website): add bilingual legal pages`
 ### Task 2: Vercel configuration and public metadata
 
 **Files:**
+
 - Create: `vercel.json`
 - Modify: `package.json`
 - Modify: `package-lock.json`
@@ -151,6 +168,7 @@ Commit: `feat(website): add bilingual legal pages`
 - Modify: `scripts/verify-release.mjs`
 
 **Interfaces:**
+
 - Consumes: `npm run build:website` and `website/dist` from Task 1.
 - Produces: repeatable Vercel builds and a single canonical documentation origin across metadata.
 
@@ -159,9 +177,15 @@ Commit: `feat(website): add bilingual legal pages`
 Extend `scripts/verify-release.mjs` with exact assertions:
 
 ```js
-assert(pkg.homepage === 'https://readonly-view.nipesolutions.com', 'Homepage is stale');
+assert(
+    pkg.homepage === 'https://readonly-view.nipesolutions.com',
+    'Homepage is stale',
+);
 const vercel = JSON.parse(await readFile(resolve(root, 'vercel.json'), 'utf8'));
-assert(vercel.buildCommand === 'npm run build:website', 'Unexpected Vercel build');
+assert(
+    vercel.buildCommand === 'npm run build:website',
+    'Unexpected Vercel build',
+);
 assert(vercel.outputDirectory === 'website/dist', 'Unexpected Vercel output');
 ```
 
@@ -200,12 +224,14 @@ Commit: `chore(release): prepare v2 production metadata`
 ### Task 3: Reference-grade CI and guarded release workflow
 
 **Files:**
+
 - Modify: `.github/workflows/ci.yml`
 - Modify: `.github/workflows/release.yml`
 - Modify: `docs/RELEASING.md`
 - Modify: `CONTRIBUTING.md`
 
 **Interfaces:**
+
 - Consumes: `npm run release:check`, Playwright projects, packed artifact output, npm channel verifier.
 - Produces: dependency-ordered CI, failure diagnostics, and a stable-only guarded release path using GitHub environment `npm`.
 
@@ -238,10 +264,12 @@ Commit: `ci: align deployment and stable release gates`
 ### Task 4: Finalize changelog and verify the release candidate
 
 **Files:**
+
 - Modify: `CHANGELOG.md`
 - Modify: `docs/release-readiness.md`
 
 **Interfaces:**
+
 - Consumes: completed Tasks 1–3 and version `2.0.0`.
 - Produces: an auditable stable changelog and exact local release evidence.
 
@@ -276,11 +304,13 @@ Commit: `docs: finalize readonly-view 2.0.0 release notes`
 ### Task 5: Review, merge, and Vercel production deployment
 
 **Files:**
+
 - External: GitHub pull request and CI
 - External: Vercel project for `NIPE-Solutions/readonly-view`
 - External: GoDaddy DNS for `nipesolutions.com`
 
 **Interfaces:**
+
 - Consumes: reviewed release branch and `vercel.json`.
 - Produces: green `main`, Vercel preview/production deployments, DNS verification, and valid HTTPS at the production origin.
 
@@ -311,12 +341,14 @@ Check status 200, canonical URL, title, home interaction, all four legal routes,
 ### Task 6: npm trusted publishing and irreversible stable release
 
 **Files:**
+
 - External: GitHub environment `npm`
 - External: npm organization/package trusted-publisher settings
 - External: GitHub Actions Release run
 - External: npm package and GitHub release
 
 **Interfaces:**
+
 - Consumes: green merge commit on `main`, exact version `2.0.0`, npm organization access, production documentation.
 - Produces: public `@nipe-solutions/readonly-view@2.0.0`, `latest` dist-tag, provenance, and GitHub `v2.0.0` release.
 
