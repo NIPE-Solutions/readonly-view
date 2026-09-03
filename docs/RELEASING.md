@@ -19,17 +19,35 @@ If a documentation deployment is defective, restore the previous known-good
 Vercel deployment immediately and follow with a reviewed revert or fix on
 `main`. Do not publish a package merely to repair the hosted documentation.
 
-## One-time npm and GitHub setup
+## First-publication authentication
 
 Create a protected GitHub environment named `npm`, restrict deployments to
-`main`, and require a reviewer when the repository plan supports it. Configure
-the npm trusted publisher with this exact tuple:
+`main`, and require a reviewer when the repository plan supports it. Because npm
+does not allow trusted-publisher setup until the package exists, the initial
+`2.0.0` publication uses a short-lived granular npm access token:
 
-- repository owner/name: `NIPE-Solutions/readonly-view`
-- workflow filename: `release.yml`
-- GitHub environment: `npm`
+1. Immediately before dispatch, create a granular token with the shortest
+   practical expiry and only the package-write access needed for the
+   `@nipe-solutions` scope. Enable CI-compatible publication when npm's account
+   policy requires it.
+2. Add it as an environment secret named `NPM_TOKEN` on the protected `npm`
+   environment, not as a repository-wide secret. Only the `publish` job reads
+   it.
+3. After `2.0.0` exists and all checks below pass, configure the npm trusted
+   publisher with this exact tuple:
 
-Use OIDC trusted publishing; do not add a long-lived npm token.
+    - repository owner/name: `NIPE-Solutions/readonly-view`
+    - workflow filename: `release.yml`
+    - GitHub environment: `npm`
+
+4. Delete the `NPM_TOKEN` GitHub environment secret and revoke the granular
+   token. For future versions, update the explicit release authorization and
+   remove `NODE_AUTH_TOKEN` from the publish step so npm authenticates through
+   the trusted publisher.
+
+The initial workflow uses the token for registry authentication and the
+publish job's OIDC permission for `--provenance`; it is not an OIDC-only
+publication. Never use a long-lived npm token.
 
 ## Stable 2.0.0 procedure
 
@@ -49,20 +67,39 @@ Use OIDC trusted publishing; do not add a long-lived npm token.
     ```
 
 5. Approve the `npm` environment deployment, then monitor the publish job. It
-   reconfirms registry absence, publishes with provenance, waits for registry
-   propagation, and only then allows creation of GitHub release `v2.0.0`.
+   downloads the single tarball produced by the verified job, reconfirms
+   registry absence, publishes those exact bytes with provenance, waits for
+   registry propagation, and only then creates GitHub release `v2.0.0` at the
+   immutable workflow commit.
 6. Verify the public result:
 
     ```bash
     npm view @nipe-solutions/readonly-view@2.0.0 name version dist-tags.latest repository homepage
-    npm exec --yes --package=@nipe-solutions/readonly-view@2.0.0 -- \
-      node -e "import('@nipe-solutions/readonly-view').then(m => console.log(typeof m.readonlyView))"
-    gh release view v2.0.0 --repo NIPE-Solutions/readonly-view
+    test -n "$(npm view @nipe-solutions/readonly-view@2.0.0 dist.attestations.url)"
+
+    consumer_dir="$(mktemp -d)"
+    (
+      cd "$consumer_dir"
+      npm init --yes >/dev/null
+      npm install --ignore-scripts --save-exact @nipe-solutions/readonly-view@2.0.0
+      node --input-type=module -e \
+        "import('@nipe-solutions/readonly-view').then(m => console.log(typeof m.readonlyView))"
+    )
+
+    for route in / /privacy/ /impressum/ /de/datenschutz/ /de/impressum/ /robots.txt /sitemap.xml; do
+      curl --fail --silent --show-error --location \
+        "https://readonly-view.nipesolutions.com${route}" >/dev/null
+    done
+
+    gh release view v2.0.0 --repo NIPE-Solutions/readonly-view \
+      --json tagName,targetCommitish,url
     ```
 
 The metadata must report version `2.0.0`, `latest` must resolve to `2.0.0`, the
 homepage must be `https://readonly-view.nipesolutions.com`, the import must print
-`function`, npm must show provenance, and the GitHub release must exist.
+`function` from the temporary consumer, the attestation URL must be nonempty,
+all production requests must succeed over HTTPS, and the GitHub release target
+must match the dispatched `main` SHA. Remove `consumer_dir` after inspection.
 
 npm versions are immutable: never attempt to republish `2.0.0`. If the package
 is defective, deprecate it with a precise warning when appropriate, publish a

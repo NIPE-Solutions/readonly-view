@@ -41,7 +41,7 @@
         "test": "npm run test:unit",
         "test:unit": "vitest run --project unit --passWithNoTests",
         "test:types": "tsc --project test/types/tsconfig.json --noEmit",
-        "test:package": "npm run build:dist && node --test test/package/verify-package.test.mjs",
+        "test:package": "npm run build:dist && node --test test/package/verify-package.test.mjs test/package/verify-registry.test.mjs",
         "test:size": "npm run build:dist && node scripts/check-bundle-size.mjs",
         "test:website": "npm run build:website && node scripts/verify-website.mjs",
         "test:browser": "playwright test",

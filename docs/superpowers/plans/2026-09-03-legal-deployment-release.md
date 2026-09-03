@@ -4,7 +4,7 @@
 
 **Goal:** Add bilingual legal pages, production Vercel deployment, reference-grade GitHub automation, and publish `@nipe-solutions/readonly-view@2.0.0` as a verified stable release.
 
-**Architecture:** Keep the Vite site framework-free and add four static legal entry points sharing the existing design system. Use Vercel Git integration for preview/production deployments and the guarded GitHub release workflow for npm OIDC publication after all local and hosted checks pass.
+**Architecture:** Keep the Vite site framework-free and add four static legal entry points sharing the existing design system. Use Vercel Git integration for preview/production deployments and the guarded GitHub release workflow for initial token-authenticated publication with OIDC provenance after all local and hosted checks pass; switch future releases to npm trusted publishing after the package exists.
 
 **Tech Stack:** HTML, CSS, TypeScript, Vite 8, Playwright, GitHub Actions, Vercel, GoDaddy DNS, npm trusted publishing.
 
@@ -247,7 +247,7 @@ Use `actions/checkout@v7`, retain `actions/setup-node@v7` and `actions/upload-ar
 
 - [ ] **Step 3: Tighten stable release validation**
 
-Use `actions/checkout@v7`, keep exact confirmation `publish 2.0.0 with latest`, require `main`, use environment `npm`, grant `id-token: write` only to publish, verify `2.0.0` is absent before publish, then verify registry propagation before the GitHub release. Preserve generic version inputs for future releases but enforce stable/latest through `verify-release-channel.mjs`.
+Use `actions/checkout@v7`, keep exact confirmation `publish 2.0.0 with latest`, require `main`, use environment `npm`, grant `id-token: write` only to publish, verify `2.0.0` is absent before publish, carry exactly one verified tarball into the publish job, and verify registry propagation before a SHA-targeted GitHub release. Use a short-lived granular `NPM_TOKEN` environment secret only for the initial package bootstrap, with `--provenance`; remove it after trusted publishing can be configured. Preserve generic version inputs for future releases but enforce stable/latest through `verify-release-channel.mjs`.
 
 - [ ] **Step 4: Document hosted deployment and publication**
 
@@ -356,9 +356,9 @@ Check status 200, canonical URL, title, home interaction, all four legal routes,
 
 Create the repository environment `npm`, restrict it to `main`, and add the authenticated owner as a required reviewer when the repository plan supports reviewers. Do not add a long-lived npm token.
 
-- [ ] **Step 2: Configure npm trusted publishing**
+- [ ] **Step 2: Configure first-publication authentication**
 
-In npm organization/package settings, configure repository `NIPE-Solutions/readonly-view`, workflow `release.yml`, environment `npm`. If npm cannot create the package through OIDC, perform only the minimum authenticated first-publication setup allowed by npm, then retain OIDC for future releases.
+Create a short-lived granular npm token with only the required `@nipe-solutions` package-write access and store it as the `NPM_TOKEN` secret on the protected `npm` environment. The initial workflow uses that token only in the publish job and uses OIDC for `--provenance`; it is not OIDC-only.
 
 - [ ] **Step 3: Reconfirm registry absence and commit identity**
 
@@ -385,13 +385,25 @@ Run:
 
 ```bash
 npm view @nipe-solutions/readonly-view@2.0.0 name version dist-tags.latest repository homepage
-npm exec --yes --package=@nipe-solutions/readonly-view@2.0.0 -- \
-  node -e "import('@nipe-solutions/readonly-view').then(m => console.log(typeof m.readonlyView))"
-gh release view v2.0.0 --repo NIPE-Solutions/readonly-view
+test -n "$(npm view @nipe-solutions/readonly-view@2.0.0 dist.attestations.url)"
+consumer_dir="$(mktemp -d)"
+(
+  cd "$consumer_dir"
+  npm init --yes >/dev/null
+  npm install --ignore-scripts --save-exact @nipe-solutions/readonly-view@2.0.0
+  node --input-type=module -e \
+    "import('@nipe-solutions/readonly-view').then(m => console.log(typeof m.readonlyView))"
+)
+gh release view v2.0.0 --repo NIPE-Solutions/readonly-view \
+  --json tagName,targetCommitish,url
 ```
 
-Expected: exact name/version, `latest` equals `2.0.0`, production homepage, import prints `function`, provenance is visible in npm, and the GitHub release exists.
+Expected: exact name/version, `latest` equals `2.0.0`, production homepage, the temporary consumer import prints `function`, provenance is visible in npm, and the GitHub release targets the dispatched SHA.
 
-- [ ] **Step 6: Record final release evidence**
+- [ ] **Step 6: Switch future releases to trusted publishing**
+
+In npm package settings, configure repository `NIPE-Solutions/readonly-view`, workflow `release.yml`, environment `npm`. Delete the `NPM_TOKEN` GitHub environment secret, revoke the granular token, and remove `NODE_AUTH_TOKEN` from the publish step when preparing the next release.
+
+- [ ] **Step 7: Record final release evidence**
 
 Update the release-readiness record or GitHub release notes with the production site, CI run, npm version, provenance, tarball integrity, and known limitations. Do not modify the old `immuview` package.

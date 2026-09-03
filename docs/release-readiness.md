@@ -1,6 +1,8 @@
 # ReadonlyView 2.0 release readiness
 
-Status: alpha implementation complete; main-branch CI and npm trusted-publisher configuration remain external release prerequisites. No package or website was published by this work.
+Status: alpha implementation complete; main-branch CI, the protected `npm`
+environment, and first-publication authentication remain external release
+prerequisites. No package or website was published by this work.
 
 ## 1. Architecture
 
@@ -36,7 +38,15 @@ Vite emits ES2022 ESM and CommonJS builds; TypeScript plus Rollup emits one decl
 
 ## 9. CI and release
 
-CI runs the Node 24 quality gate, Node 22 compatibility, and Chromium/Firefox/WebKit jobs. Release is manual, main-only, exact-confirmation gated, environment protected, checks version/channel policy and registry availability, repeats quality and browsers, uses npm OIDC trusted publishing, waits for propagation, then creates a GitHub release. Repository-side npm trusted-publisher and environment-reviewer settings must be configured before use.
+CI runs the Node 24 quality gate, Node 22 compatibility, and
+Chromium/Firefox/WebKit jobs. Release is manual, main-only, exact-confirmation
+gated, environment protected, checks version/channel policy and registry
+availability, carries the verified tarball through the browser gate, and waits
+for propagation before creating a SHA-targeted GitHub release. The first
+publication uses a short-lived granular `NPM_TOKEN` environment secret plus
+OIDC provenance. After the package exists, that token must be revoked and
+deleted and the documented npm trusted publisher must replace it for future
+releases.
 
 ## 10. Documentation
 
@@ -56,7 +66,12 @@ ReadonlyView is not a sandbox. Generic/overloaded callable types cannot always b
 
 ## 14. Recommended follow-up
 
-Run the branch on GitHub Actions, configure the npm trusted publisher and protected `npm` environment, decide the final alpha/stable version, promote `Unreleased` changelog notes, and only then invoke the manual release workflow. Bun, Deno, older TypeScript, and additional native adapters should be claimed only after dedicated CI.
+Run the branch on GitHub Actions, configure the protected `npm` environment and
+its short-lived first-publication token, decide the final alpha/stable version,
+promote `Unreleased` changelog notes, and only then invoke the manual release
+workflow. Configure npm trusted publishing and remove the bootstrap token after
+the initial package exists. Bun, Deno, older TypeScript, and additional native
+adapters should be claimed only after dedicated CI.
 
 ## Local verification
 
