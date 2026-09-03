@@ -1,4 +1,4 @@
-import { readonlyView } from '../dist/index.js';
+import { readonlyView } from '../src/index';
 
 const source = { user: { name: 'Alice' } };
 const view = readonlyView(source);
