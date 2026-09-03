@@ -1,6 +1,7 @@
 {
     "name": "@nipe-solutions/readonly-view",
     "version": "2.0.0-alpha.0",
+    "packageManager": "npm@11.19.0",
     "description": "A deeply readonly, lazy, live view over mutable JavaScript data.",
     "type": "module",
     "main": "./dist/index.cjs",

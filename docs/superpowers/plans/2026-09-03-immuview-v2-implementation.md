@@ -239,7 +239,7 @@ If `thisArg` is a known view, keep it readonly; otherwise preserve the explicit 
 
 - [ ] **Step 3: Write failing accessor/class tests**
 
-Test getters receive readonly `this`, returned values are wrapped, enumeration does not invoke getters, setters are blocked, prototypes and `instanceof` work, public class writes fail, and private-brand access rejects without mutable rebinding.
+Test getters receive readonly `this`, returned values are wrapped, enumeration does not invoke getters, setters are blocked, prototype reflection is protected, the documented `instanceof` tradeoff holds, public class writes fail, and private-brand access rejects without mutable rebinding.
 
 - [ ] **Step 4: Implement accessor/class semantics**
 

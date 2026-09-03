@@ -18,7 +18,18 @@ export async function verifyPackage() {
             { cwd: root },
         );
         const [packed] = JSON.parse(stdout);
-        const files = packed.files.map((entry) => entry.path);
+        const files = packed.files.map((entry) => entry.path).sort();
+        const expectedFiles = [
+            'LICENSE',
+            'README.md',
+            'dist/index.cjs',
+            'dist/index.d.ts',
+            'dist/index.js',
+            'package.json',
+        ];
+        if (JSON.stringify(files) !== JSON.stringify(expectedFiles)) {
+            throw new Error(`Unexpected packed files: ${files.join(', ')}`);
+        }
         if (
             files.some((file) => /^(src|test|website|benchmarks)\//.test(file))
         ) {
@@ -98,6 +109,26 @@ export async function verifyPackage() {
             format: 'esm',
             platform: 'browser',
         });
+
+        await writeFile(
+            join(temporary, 'tree-shake-entry.js'),
+            `import '${packageName}';`,
+        );
+        await build({
+            absWorkingDir: temporary,
+            entryPoints: ['tree-shake-entry.js'],
+            outfile: 'tree-shaken.js',
+            bundle: true,
+            format: 'esm',
+            platform: 'browser',
+            logLevel: 'silent',
+        });
+        const treeShaken = await readFile(
+            join(temporary, 'tree-shaken.js'),
+            'utf8',
+        );
+        if (treeShaken.trim() !== '')
+            throw new Error('Side-effect-only import was not tree-shaken');
 
         let privateBlocked = false;
         try {

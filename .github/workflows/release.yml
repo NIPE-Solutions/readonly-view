@@ -12,15 +12,27 @@ on:
                 type: choice
                 options: [next, latest]
             confirmation:
-                description: Type publish to confirm an npm release
+                description: Type publish VERSION with CHANNEL
                 required: true
 
 permissions:
     contents: read
 
 jobs:
+    authorize:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Require main and exact confirmation
+              env:
+                  ACTUAL_REF: ${{ github.ref }}
+                  ACTUAL_CONFIRMATION: ${{ inputs.confirmation }}
+                  EXPECTED_CONFIRMATION: publish ${{ inputs.version }} with ${{ inputs.channel }}
+              run: |
+                  test "$ACTUAL_REF" = "refs/heads/main"
+                  test "$ACTUAL_CONFIRMATION" = "$EXPECTED_CONFIRMATION"
+
     verify:
-        if: inputs.confirmation == 'publish'
+        needs: authorize
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
@@ -34,9 +46,32 @@ jobs:
                   REQUESTED_VERSION: ${{ inputs.version }}
               run: test "$(node -p "require('./package.json').version")" = "$REQUESTED_VERSION"
             - run: npm run release:check
+            - name: Verify version and channel policy
+              env:
+                  REQUESTED_CHANNEL: ${{ inputs.channel }}
+              run: node scripts/verify-release-channel.mjs "$REQUESTED_CHANNEL"
+            - run: node scripts/verify-registry.mjs unpublished
+
+    browser:
+        needs: verify
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                browser: [chromium, firefox, webkit]
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 24
+                  cache: npm
+            - run: npm ci
+            - run: npx playwright install --with-deps ${{ matrix.browser }}
+            - run: npm run build
+            - run: npm run test:browser -- --project=${{ matrix.browser }}
 
     publish:
-        needs: verify
+        needs: [verify, browser]
         runs-on: ubuntu-latest
         environment: npm
         permissions:
@@ -56,3 +91,23 @@ jobs:
             - run: npm run release:check
             - name: Publish through npm trusted publishing
               run: npm publish --access public --tag ${{ inputs.channel }}
+            - name: Verify registry propagation
+              run: node scripts/verify-registry.mjs published
+
+    github-release:
+        needs: publish
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v6
+            - name: Create GitHub release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  RELEASE_VERSION: ${{ inputs.version }}
+                  RELEASE_CHANNEL: ${{ inputs.channel }}
+              run: >-
+                  gh release create "v$RELEASE_VERSION"
+                  --title "ReadonlyView v$RELEASE_VERSION"
+                  --generate-notes
+                  ${{ inputs.channel == 'next' && '--prerelease' || '' }}

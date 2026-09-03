@@ -65,7 +65,7 @@ Initial wrapping creates one proxy and does not walk the graph. Nested proxies a
 
 ## Documentation
 
-[Architecture](docs/architecture.md) · [API](docs/api.md) · [Supported types](docs/supported-types.md) · [Migration](docs/migration-v1-v2.md) · [Security](docs/security-and-trust.md) · [Contributing](CONTRIBUTING.md)
+[Architecture](docs/architecture.md) · [API](docs/api.md) · [Supported types](docs/supported-types.md) · [Compatibility](docs/compatibility.md) · [Migration](docs/migration-v1-v2.md) · [Security](docs/security-and-trust.md) · [Contributing](CONTRIBUTING.md)
 
 ## License
 

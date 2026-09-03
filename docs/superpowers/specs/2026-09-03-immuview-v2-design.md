@@ -160,29 +160,29 @@ Calls with another explicit `this` preserve normal JavaScript call semantics; Re
 
 Dedicated Map, Set, and Date adapters call native methods with valid source receivers and wrap outputs. Generic method handling never binds these native methods blindly.
 
-Custom instances preserve their prototype. Public fields and public methods follow normal membrane semantics, so `instanceof` remains useful and writes through method `this` throw. Private-field methods and accessors may fail native brand checks because rebinding them to the source would create a mutation escape hatch. This limitation is explicit.
+Custom instances expose a readonly view of their prototype. Public fields and public methods follow normal membrane semantics, so writes through method `this` throw. This intentionally makes `view instanceof SourceClass` false: exposing the raw prototype to preserve the comparison would be a mutation escape. Private-field methods and accessors may fail native brand checks because rebinding them to the source would create another escape hatch. These limitations are explicit.
 
 ## Supported values
 
-| Value                                           | Classification                           | Semantics                                                                           |
-| ----------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------- |
-| primitives, `null`, `undefined`, bigint, symbol | Fully supported                          | Returned unchanged                                                                  |
-| plain and null-prototype objects                | Fully supported                          | Live property and reflection view                                                   |
-| Array and tuple                                 | Fully supported                          | Array identity preserved; mutators rejected                                         |
-| Map / ReadonlyMap                               | Fully supported                          | Read methods and iteration wrap keys and values; mutators rejected                  |
-| Set / ReadonlySet                               | Fully supported                          | Reads and iteration wrap values; mutators rejected                                  |
-| Date                                            | Fully supported                          | Read methods work; complete setter family rejected                                  |
-| Function                                        | Supported with documented semantics      | Calls allowed; readonly receiver; outputs wrapped; external side effects possible   |
-| custom class instance                           | Supported with documented semantics      | Prototype preserved; public state protected; private brands may reject              |
-| consumer Proxy                                  | Supported with trust limitation          | Membrane does not claim stronger guarantees than source traps permit                |
-| RegExp                                          | Explicitly unsupported                   | Stateful native methods and `lastIndex` make generic wrapping unsafe                |
-| Error                                           | Explicitly unsupported                   | Engine-specific internal state and mutable custom fields are not claimed safe       |
-| URL / URLSearchParams                           | Explicitly unsupported                   | Native setters and mutators require a dedicated future adapter                      |
-| ArrayBuffer / SharedArrayBuffer                 | Explicitly unsupported                   | Mutable backing memory cannot be made readonly by an object Proxy                   |
-| DataView / TypedArray                           | Explicitly unsupported                   | Internal slots and backing-memory mutation require separate semantics               |
-| WeakMap / WeakSet                               | Explicitly unsupported                   | Mutating APIs and non-enumerable contents require dedicated semantics               |
-| Promise                                         | Explicitly unsupported                   | Internal-slot methods and asynchronously exposed values require dedicated semantics |
-| unknown host/native object                      | Explicitly unsupported when identifiable | Correctness is preferred over accidental method exposure                            |
+| Value                                           | Classification                           | Semantics                                                                               |
+| ----------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------- |
+| primitives, `null`, `undefined`, bigint, symbol | Fully supported                          | Returned unchanged                                                                      |
+| plain and null-prototype objects                | Fully supported                          | Live property and reflection view                                                       |
+| Array and tuple                                 | Fully supported                          | Array identity preserved; mutators rejected                                             |
+| Map / ReadonlyMap                               | Fully supported                          | Read methods and iteration wrap keys and values; mutators rejected                      |
+| Set / ReadonlySet                               | Fully supported                          | Reads and iteration wrap values; mutators rejected                                      |
+| Date                                            | Fully supported                          | Read methods work; complete setter family rejected                                      |
+| Function                                        | Supported with documented semantics      | Calls allowed; readonly receiver; outputs wrapped; external side effects possible       |
+| custom class instance                           | Supported with documented semantics      | Prototype viewed; public state protected; `instanceof` false; private brands may reject |
+| consumer Proxy                                  | Supported with trust limitation          | Membrane does not claim stronger guarantees than source traps permit                    |
+| RegExp                                          | Explicitly unsupported                   | Stateful native methods and `lastIndex` make generic wrapping unsafe                    |
+| Error                                           | Explicitly unsupported                   | Engine-specific internal state and mutable custom fields are not claimed safe           |
+| URL / URLSearchParams                           | Explicitly unsupported                   | Native setters and mutators require a dedicated future adapter                          |
+| ArrayBuffer / SharedArrayBuffer                 | Explicitly unsupported                   | Mutable backing memory cannot be made readonly by an object Proxy                       |
+| DataView / TypedArray                           | Explicitly unsupported                   | Internal slots and backing-memory mutation require separate semantics                   |
+| WeakMap / WeakSet                               | Explicitly unsupported                   | Mutating APIs and non-enumerable contents require dedicated semantics                   |
+| Promise                                         | Explicitly unsupported                   | Internal-slot methods and asynchronously exposed values require dedicated semantics     |
+| unknown host/native object                      | Explicitly unsupported when identifiable | Correctness is preferred over accidental method exposure                                |
 
 Unsupported values throw lazily when accessed, including when used as a root. Support can expand in future minor releases only with complete semantics and tests.
 
