@@ -1,32 +1,73 @@
 {
-    "name": "immuview",
-    "version": "1.0.3",
-    "description": "A library for creating immutable views of objects and arrays.",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "scripts": {
-        "lint": "eslint 'src/**/*.{ts,tsx}' --quiet",
-        "format": "prettier --write 'src/**/*.{js,ts,json}'",
-        "build": "tsc",
-        "test": "jest",
-        "coverage": "jest --coverage",
-        "typedoc": "typedoc"
+    "name": "@nipe-solutions/readonly-view",
+    "version": "2.0.0-alpha.0",
+    "description": "A deeply readonly, lazy, live view over mutable JavaScript data.",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        },
+        "./package.json": "./package.json"
     },
-    "keywords": [],
+    "files": [
+        "dist"
+    ],
+    "sideEffects": false,
+    "engines": {
+        "node": ">=22 <25"
+    },
+    "scripts": {
+        "build": "npm run build:dist",
+        "build:dist": "npm run clean && vite build && tsc --project tsconfig.build.json",
+        "clean": "node scripts/clean.mjs",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "lint": "eslint . --max-warnings 0",
+        "test": "npm run test:unit",
+        "test:unit": "vitest run --project unit --passWithNoTests",
+        "test:types": "tsc --project test/types/tsconfig.json --noEmit",
+        "typecheck": "tsc --noEmit",
+        "coverage": "vitest run --project unit --coverage"
+    },
+    "keywords": [
+        "readonly",
+        "proxy",
+        "membrane",
+        "typescript",
+        "immutable-view"
+    ],
     "author": "Nicholas Petrasek",
     "license": "MIT",
+    "homepage": "https://github.com/NIPE-Solutions/readonly-view#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/NIPE-Solutions/readonly-view.git"
+    },
+    "bugs": {
+        "url": "https://github.com/NIPE-Solutions/readonly-view/issues"
+    },
+    "publishConfig": {
+        "access": "public",
+        "provenance": true
+    },
     "devDependencies": {
-        "@types/jest": "^29.5.5",
-        "@types/node": "^20.8.2",
-        "@typescript-eslint/eslint-plugin": "^6.7.4",
-        "eslint": "^8.50.0",
-        "eslint-config-prettier": "^9.0.0",
-        "eslint-plugin-jest": "^27.4.2",
-        "eslint-plugin-prettier": "^5.0.0",
-        "jest": "^29.7.0",
-        "prettier": "^3.0.3",
-        "ts-jest": "^29.1.1",
-        "typedoc": "^0.25.1",
-        "typescript": "^5.2.2"
+        "@eslint/js": "^10.0.1",
+        "@playwright/test": "^1.62.1",
+        "@types/node": "^26.4.1",
+        "@vitest/coverage-v8": "^4.1.11",
+        "esbuild": "^0.28.2",
+        "eslint": "^10.9.1",
+        "fast-check": "^4.9.0",
+        "globals": "^17.3.0",
+        "prettier": "^3.9.6",
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.69.0",
+        "vite": "^8.2.2",
+        "vitest": "^4.1.11"
     }
 }

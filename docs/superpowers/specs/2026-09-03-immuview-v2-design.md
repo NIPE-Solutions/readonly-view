@@ -11,15 +11,15 @@ ReadonlyView creates a deeply readonly, lazy, live view over mutable JavaScript 
 ReadonlyView is not a state manager, store, reactive primitive, mutation API, validator, merge utility, snapshot, clone, or security sandbox. The source owner mutates the source directly. Consumers receive the view.
 
 ```ts
-import { readonlyView } from '@nipe-solutions/readonly-view'
+import { readonlyView } from '@nipe-solutions/readonly-view';
 
-const source = { user: { name: 'Alice', roles: ['admin'] } }
-const view = readonlyView(source)
+const source = { user: { name: 'Alice', roles: ['admin'] } };
+const view = readonlyView(source);
 
-source.user.name = 'Bob'
-console.log(view.user.name) // Bob
+source.user.name = 'Bob';
+console.log(view.user.name); // Bob
 
-view.user.roles.push('editor') // TypeScript error and DirectMutationError
+view.user.roles.push('editor'); // TypeScript error and DirectMutationError
 ```
 
 ## Public API
@@ -27,18 +27,18 @@ view.user.roles.push('editor') // TypeScript error and DirectMutationError
 The package root exports only:
 
 ```ts
-readonlyView
-isReadonlyView
-DirectMutationError
-UnsupportedTypeError
-DeepReadonly
+readonlyView;
+isReadonlyView;
+DirectMutationError;
+UnsupportedTypeError;
+DeepReadonly;
 ```
 
 There is no default export, configuration object, mutation API, `unwrap`, registry, plugin system, or public internal module. Package exports reject private subpath imports.
 
 ```ts
-function readonlyView<T>(source: T): DeepReadonly<T>
-function isReadonlyView(value: unknown): boolean
+function readonlyView<T>(source: T): DeepReadonly<T>;
+function isReadonlyView(value: unknown): boolean;
 ```
 
 Primitives are returned unchanged. Passing a ReadonlyView view to `readonlyView` returns the same view.
@@ -78,14 +78,14 @@ The second map may also be represented by module-private WeakMap metadata shared
 Separate top-level calls create independent membranes:
 
 ```ts
-readonlyView(source) !== readonlyView(source)
+readonlyView(source) !== readonlyView(source);
 ```
 
 Identity is guaranteed inside each membrane. Existing ReadonlyView inputs are idempotent:
 
 ```ts
-const first = readonlyView(source)
-readonlyView(first) === first
+const first = readonlyView(source);
+readonlyView(first) === first;
 ```
 
 The implementation registers a source/view pair before nested wrapping can occur.
@@ -126,9 +126,9 @@ The mutation error is small and stable:
 
 ```ts
 class DirectMutationError extends Error {
-  readonly operation: string
-  readonly property?: PropertyKey
-  readonly objectKind: string
+    readonly operation: string;
+    readonly property?: PropertyKey;
+    readonly objectKind: string;
 }
 ```
 
@@ -164,25 +164,25 @@ Custom instances preserve their prototype. Public fields and public methods foll
 
 ## Supported values
 
-| Value | Classification | Semantics |
-| --- | --- | --- |
-| primitives, `null`, `undefined`, bigint, symbol | Fully supported | Returned unchanged |
-| plain and null-prototype objects | Fully supported | Live property and reflection view |
-| Array and tuple | Fully supported | Array identity preserved; mutators rejected |
-| Map / ReadonlyMap | Fully supported | Read methods and iteration wrap keys and values; mutators rejected |
-| Set / ReadonlySet | Fully supported | Reads and iteration wrap values; mutators rejected |
-| Date | Fully supported | Read methods work; complete setter family rejected |
-| Function | Supported with documented semantics | Calls allowed; readonly receiver; outputs wrapped; external side effects possible |
-| custom class instance | Supported with documented semantics | Prototype preserved; public state protected; private brands may reject |
-| consumer Proxy | Supported with trust limitation | Membrane does not claim stronger guarantees than source traps permit |
-| RegExp | Explicitly unsupported | Stateful native methods and `lastIndex` make generic wrapping unsafe |
-| Error | Explicitly unsupported | Engine-specific internal state and mutable custom fields are not claimed safe |
-| URL / URLSearchParams | Explicitly unsupported | Native setters and mutators require a dedicated future adapter |
-| ArrayBuffer / SharedArrayBuffer | Explicitly unsupported | Mutable backing memory cannot be made readonly by an object Proxy |
-| DataView / TypedArray | Explicitly unsupported | Internal slots and backing-memory mutation require separate semantics |
-| WeakMap / WeakSet | Explicitly unsupported | Mutating APIs and non-enumerable contents require dedicated semantics |
-| Promise | Explicitly unsupported | Internal-slot methods and asynchronously exposed values require dedicated semantics |
-| unknown host/native object | Explicitly unsupported when identifiable | Correctness is preferred over accidental method exposure |
+| Value                                           | Classification                           | Semantics                                                                           |
+| ----------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------- |
+| primitives, `null`, `undefined`, bigint, symbol | Fully supported                          | Returned unchanged                                                                  |
+| plain and null-prototype objects                | Fully supported                          | Live property and reflection view                                                   |
+| Array and tuple                                 | Fully supported                          | Array identity preserved; mutators rejected                                         |
+| Map / ReadonlyMap                               | Fully supported                          | Read methods and iteration wrap keys and values; mutators rejected                  |
+| Set / ReadonlySet                               | Fully supported                          | Reads and iteration wrap values; mutators rejected                                  |
+| Date                                            | Fully supported                          | Read methods work; complete setter family rejected                                  |
+| Function                                        | Supported with documented semantics      | Calls allowed; readonly receiver; outputs wrapped; external side effects possible   |
+| custom class instance                           | Supported with documented semantics      | Prototype preserved; public state protected; private brands may reject              |
+| consumer Proxy                                  | Supported with trust limitation          | Membrane does not claim stronger guarantees than source traps permit                |
+| RegExp                                          | Explicitly unsupported                   | Stateful native methods and `lastIndex` make generic wrapping unsafe                |
+| Error                                           | Explicitly unsupported                   | Engine-specific internal state and mutable custom fields are not claimed safe       |
+| URL / URLSearchParams                           | Explicitly unsupported                   | Native setters and mutators require a dedicated future adapter                      |
+| ArrayBuffer / SharedArrayBuffer                 | Explicitly unsupported                   | Mutable backing memory cannot be made readonly by an object Proxy                   |
+| DataView / TypedArray                           | Explicitly unsupported                   | Internal slots and backing-memory mutation require separate semantics               |
+| WeakMap / WeakSet                               | Explicitly unsupported                   | Mutating APIs and non-enumerable contents require dedicated semantics               |
+| Promise                                         | Explicitly unsupported                   | Internal-slot methods and asynchronously exposed values require dedicated semantics |
+| unknown host/native object                      | Explicitly unsupported when identifiable | Correctness is preferred over accidental method exposure                            |
 
 Unsupported values throw lazily when accessed, including when used as a root. Support can expand in future minor releases only with complete semantics and tests.
 

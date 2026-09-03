@@ -28,12 +28,14 @@
 ### Task 1: Modern toolchain and repository skeleton
 
 **Files:**
+
 - Modify: `package.json`
 - Replace: `package-lock.json`, `tsconfig.json`
 - Create: `.nvmrc`, `tsconfig.build.json`, `vite.config.ts`, `vitest.config.ts`, `eslint.config.js`, `.prettierignore`, `test/setup.ts`
 - Remove: `jest.config.js`, `.eslintrc.js`, `.prettierrc`, `.npmignore`
 
 **Interfaces:**
+
 - Consumes: Node.js 24 and npm.
 - Produces: strict TypeScript, Vitest projects, dual-format build commands, and format/lint/type/test scripts.
 
@@ -43,19 +45,19 @@ Set name `@nipe-solutions/readonly-view`, version `2.0.0-alpha.0`, `type: "modul
 
 ```json
 {
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        },
+        "./package.json": "./package.json"
     },
-    "./package.json": "./package.json"
-  },
-  "files": ["dist"],
-  "sideEffects": false
+    "files": ["dist"],
+    "sideEffects": false
 }
 ```
 
@@ -92,11 +94,13 @@ git commit -m "build: modernize the v2 toolchain"
 ### Task 2: Public types and error contract
 
 **Files:**
+
 - Create: `src/public-types.ts`, `src/errors.ts`, `test/types/deep-readonly.test-d.ts`, `test/unit/errors.test.ts`
 - Replace: `src/index.ts`
 - Remove: `src/ImmuView.ts`, `src/ImmuView.unit.spec.ts`
 
 **Interfaces:**
+
 - Consumes: strict compiler.
 - Produces: `DeepReadonly<T>`, errors, and exact root exports; runtime functions may temporarily throw until Task 3.
 
@@ -106,16 +110,16 @@ Cover primitives, nullability, symbols, unions, recursion, arrays, labeled/optio
 
 ```ts
 declare const view: DeepReadonly<{
-  tuple: [number, { value: string }]
-  map: Map<{ id: number }, { value: string }>
-  date: Date
-}>
+    tuple: [number, { value: string }];
+    map: Map<{ id: number }, { value: string }>;
+    date: Date;
+}>;
 // @ts-expect-error deeply readonly
-view.tuple[1].value = 'changed'
+view.tuple[1].value = 'changed';
 // @ts-expect-error readonly collection
-view.map.set({ id: 1 }, { value: 'x' })
+view.map.set({ id: 1 }, { value: 'x' });
 // @ts-expect-error readonly Date
-view.date.setTime(0)
+view.date.setTime(0);
 ```
 
 Run `npm run test:types`; expect missing-type failures.
@@ -134,11 +138,11 @@ Use:
 
 ```ts
 new DirectMutationError({
-  operation: 'set',
-  property: 'name',
-  objectKind: 'Object',
-})
-new UnsupportedTypeError('RegExp')
+    operation: 'set',
+    property: 'name',
+    objectKind: 'Object',
+});
+new UnsupportedTypeError('RegExp');
 ```
 
 Do not retain source objects.
@@ -159,11 +163,13 @@ Expected: declarations expose only the five approved exports and no internal hel
 ### Task 3: Live object membrane and invariant-safe reflection
 
 **Files:**
+
 - Create: `src/membrane.ts`, `src/classify.ts`
 - Modify: `src/index.ts`
 - Create: `test/unit/objects.test.ts`, `test/unit/reflection.test.ts`, `test/regression/proxy-invariants.test.ts`, `test/integration/identity.test.ts`, `test/integration/source-integrity.test.ts`
 
 **Interfaces:**
+
 - Consumes: public types/errors.
 - Produces: `createMembrane().wrap`, `readonlyView`, `isReadonlyView`, source-to-view and view-to-source WeakMap metadata.
 
@@ -177,8 +183,8 @@ Use:
 
 ```ts
 interface Membrane {
-  wrap<T>(value: T): DeepReadonly<T>
-  unwrapSameMembrane(value: unknown): unknown
+    wrap<T>(value: T): DeepReadonly<T>;
+    unwrapSameMembrane(value: unknown): unknown;
 }
 ```
 
@@ -213,11 +219,13 @@ Expected: descriptor/prototype/extensibility snapshots remain byte-for-byte equi
 ### Task 4: Functions, accessors, and custom classes
 
 **Files:**
+
 - Create: `src/functions.ts`
 - Modify: `src/membrane.ts`
 - Create: `test/unit/functions.test.ts`, `test/unit/accessors.test.ts`, `test/unit/classes.test.ts`, `test/regression/method-escape.test.ts`
 
 **Interfaces:**
+
 - Consumes: membrane wrap and private metadata.
 - Produces: callable shadows with readonly view receivers and wrapped results.
 
@@ -248,11 +256,13 @@ git commit -m "feat: secure functions accessors and class receivers"
 ### Task 5: Arrays and tuple fidelity
 
 **Files:**
+
 - Create: `src/builtins/array.ts`
 - Modify: `src/membrane.ts`, `test/types/deep-readonly.test-d.ts`
 - Create: `test/unit/arrays.test.ts`, `test/regression/array-escapes.test.ts`
 
 **Interfaces:**
+
 - Consumes: membrane/callable behavior.
 - Produces: an array shadow for which `Array.isArray(view)` is true.
 
@@ -284,11 +294,13 @@ git commit -m "feat: add invariant-safe readonly arrays"
 ### Task 6: Map and Set adapters
 
 **Files:**
+
 - Create: `src/builtins/map.ts`, `src/builtins/set.ts`
 - Modify: `src/membrane.ts`
 - Create: `test/unit/map.test.ts`, `test/unit/set.test.ts`, `test/integration/collection-identity.test.ts`, `test/regression/collection-escapes.test.ts`
 
 **Interfaces:**
+
 - Consumes: `wrap`, `unwrapSameMembrane`.
 - Produces: protected collection reads/iteration/callbacks and rejected mutators.
 
@@ -323,11 +335,13 @@ git commit -m "feat: add readonly Map and Set adapters"
 ### Task 7: Date and unsupported values
 
 **Files:**
+
 - Create: `src/builtins/date.ts`
 - Modify: `src/classify.ts`, `src/membrane.ts`
 - Create: `test/unit/date.test.ts`, `test/unit/unsupported.test.ts`, `test/regression/date-mutators.test.ts`, `test/integration/existing-proxy.test.ts`
 
 **Interfaces:**
+
 - Consumes: wrapping/errors.
 - Produces: complete Date semantics and conservative known-built-in rejection.
 
@@ -362,9 +376,11 @@ git commit -m "feat: support Date and reject unsafe built-ins"
 ### Task 8: Adversarial, randomized, and documentation-example tests
 
 **Files:**
+
 - Create: `test/regression/adversarial.test.ts`, `test/regression/property-based.test.ts`, `test/integration/docs-examples.test.ts`, `test/types/docs-examples.ts`, `test/fixtures/graphs.ts`
 
 **Interfaces:**
+
 - Consumes: complete runtime API.
 - Produces: broad source-escape, invariant, random-graph, and example-drift confidence.
 
@@ -397,10 +413,12 @@ git commit -m "test: add adversarial randomized and example coverage"
 ### Task 9: Build and real tarball verification
 
 **Files:**
+
 - Modify: `vite.config.ts`, `tsconfig.build.json`, `package.json`
 - Create: `test/package/consumer-esm.mjs`, `test/package/consumer-cjs.cjs`, `test/package/consumer-types.ts`, `test/package/consumer-bundle.mjs`, `test/package/tsconfig.json`, `test/package/verify-package.mjs`, `test/package/verify-package.test.mjs`, `scripts/extract-public-api.mjs`, `scripts/extract-public-api.test.mjs`
 
 **Interfaces:**
+
 - Consumes: root source entry.
 - Produces: ESM/CJS/declaration output and packed-artifact consumer checks.
 
@@ -434,10 +452,12 @@ git commit -m "build: verify the real dual-format npm package"
 ### Task 10: Browser matrix
 
 **Files:**
+
 - Create: `playwright.config.ts`, `test/browser/index.html`, `test/browser/browser.spec.ts`
 - Modify: `package.json`
 
 **Interfaces:**
+
 - Consumes: real built ESM.
 - Produces: `npm run test:browser` for Chromium, Firefox, and WebKit.
 
@@ -468,10 +488,12 @@ git commit -m "test: verify semantics in evergreen browsers"
 ### Task 11: Benchmarks and measured size budgets
 
 **Files:**
+
 - Create: `benchmarks/benchmark.mjs`, `benchmarks/fixtures.mjs`, `benchmarks/README.md`, `scripts/check-bundle-size.mjs`, `scripts/check-bundle-size.test.mjs`, `scripts/size-budget.json`
 - Modify: `package.json`
 
 **Interfaces:**
+
 - Consumes: dist/esbuild.
 - Produces: `benchmark`, `benchmark:smoke`, `test:size`.
 
@@ -504,11 +526,13 @@ git commit -m "perf: add transparent benchmarks and size budgets"
 ### Task 12: README, architecture, migration, and project docs
 
 **Files:**
+
 - Rename/replace: `Readme.md` -> `README.md`, `LICENCE.md` -> `LICENSE`, `CODEOFCONDUCT.md` -> `CODE_OF_CONDUCT.md`
 - Replace: `CONTRIBUTING.md`
 - Create: `CHANGELOG.md`, `SECURITY.md`, `docs/architecture.md`, `docs/guarantees.md`, `docs/supported-types.md`, `docs/migration-v1-v2.md`, `docs/performance.md`, `docs/security-and-trust.md`, `docs/RELEASING.md`, and ADRs 0001–0005 for the five approved consequential decisions
 
 **Interfaces:**
+
 - Consumes: actual semantics, scripts, size, benchmark results.
 - Produces: precise user/maintainer docs whose examples are tested.
 
@@ -542,10 +566,12 @@ git commit -m "docs: document the focused v2 ownership model"
 ### Task 13: Collection-ready documentation website
 
 **Files:**
+
 - Create: `website/index.html`, `website/main.ts`, `website/styles/tokens.css`, `website/styles/site.css`, `website/content/navigation.ts`, `website/content/pages.ts`, `website/components/header.ts`, `website/components/docs-shell.ts`, `website/components/code-example.ts`, `website/components/support-table.ts`, `website/examples/runtime.ts`, `website/tsconfig.json`, `vite.website.config.ts`, `scripts/verify-website.mjs`, `scripts/verify-website.test.mjs`, `test/browser/website.spec.ts`
 - Modify: `package.json`
 
 **Interfaces:**
+
 - Consumes: built ReadonlyView and docs.
 - Produces: framework-free static site and `dev`, `build:website`, `test:website`.
 
@@ -582,11 +608,13 @@ git commit -m "docs: add the collection-ready ReadonlyView website"
 ### Task 14: GitHub hygiene, CI, and guarded release
 
 **Files:**
+
 - Replace: `.github/workflows/ci.yml`, `.github/workflows/publish.yml` with `.github/workflows/release.yml`
 - Create: `.github/ISSUE_TEMPLATE/bug.yml`, `.github/ISSUE_TEMPLATE/feature.yml`, `.github/ISSUE_TEMPLATE/config.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `renovate.json`, `scripts/verify-release-readiness.mjs`, `scripts/verify-release-readiness.test.mjs`
 - Modify: `package.json`
 
 **Interfaces:**
+
 - Consumes: all quality scripts.
 - Produces: `check`, `release:check`, CI/browser jobs, and manual provenance publishing.
 
@@ -623,10 +651,12 @@ git commit -m "ci: add v2 quality and guarded release workflows"
 ### Task 15: Final adversarial audit and readiness evidence
 
 **Files:**
+
 - Create: `docs/releases/v2-alpha-readiness.md`
 - Modify only after failing regression tests: relevant `src/*`, `test/regression/*`, docs, and size baseline
 
 **Interfaces:**
+
 - Consumes: complete repository.
 - Produces: traceable Definition-of-Done evidence without publishing.
 

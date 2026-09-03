@@ -1,0 +1,8 @@
+coverage
+dist
+node_modules
+website/dist
+package-lock.json
+.github/workflows
+CONTRIBUTING.md
+Readme.md
