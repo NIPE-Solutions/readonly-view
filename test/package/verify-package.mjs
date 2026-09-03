@@ -49,7 +49,13 @@ export async function verifyPackage() {
         );
         await exec(
             'npm',
-            ['install', '--ignore-scripts', '--no-package-lock'],
+            [
+                'install',
+                '--ignore-scripts',
+                '--no-package-lock',
+                '--no-audit',
+                '--no-fund',
+            ],
             { cwd: temporary },
         );
 

@@ -16,7 +16,10 @@ assert(
     pkg.homepage === 'https://readonly-view.nipesolutions.com',
     'Homepage is stale',
 );
-assert(pkg.version === '2.0.0', 'Unexpected package version');
+assert(
+    /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(pkg.version),
+    'Package version must be a publishable semver',
+);
 assert(pkg.version === lock.version, 'package-lock root version is stale');
 assert(
     pkg.version === lock.packages[''].version,
@@ -59,5 +62,21 @@ const changelog = await readFile(resolve(root, 'CHANGELOG.md'), 'utf8');
 assert(
     changelog.includes('## Unreleased'),
     'CHANGELOG needs an Unreleased section',
+);
+
+const releaseWorkflow = await readFile(
+    resolve(root, '.github/workflows/release.yml'),
+    'utf8',
+);
+assert(
+    !releaseWorkflow.includes('secrets.NPM_TOKEN') &&
+        !releaseWorkflow.includes('NODE_AUTH_TOKEN'),
+    'Release workflow must use OIDC trusted publishing without a token secret',
+);
+assert(
+    releaseWorkflow.includes(
+        'test "$ACTUAL_CONFIRMATION" = "publish $ACTUAL_VERSION with $ACTUAL_CHANNEL"',
+    ),
+    'Release confirmation must follow the requested version and channel',
 );
 console.log(`Release metadata verified for ${pkg.name}@${pkg.version}`);

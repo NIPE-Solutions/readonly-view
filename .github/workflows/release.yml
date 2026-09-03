@@ -12,7 +12,7 @@ on:
                 type: choice
                 options: [next, latest]
             confirmation:
-                description: Type publish 2.0.0 with latest
+                description: Type publish <version> with <channel>
                 required: true
 
 permissions:
@@ -22,7 +22,7 @@ jobs:
     authorize:
         runs-on: ubuntu-latest
         steps:
-            - name: Require main and exact stable release confirmation
+            - name: Require main and exact release confirmation
               env:
                   ACTUAL_REF: ${{ github.ref }}
                   ACTUAL_VERSION: ${{ inputs.version }}
@@ -30,9 +30,7 @@ jobs:
                   ACTUAL_CONFIRMATION: ${{ inputs.confirmation }}
               run: |
                   test "$ACTUAL_REF" = "refs/heads/main"
-                  test "$ACTUAL_VERSION" = "2.0.0"
-                  test "$ACTUAL_CHANNEL" = "latest"
-                  test "$ACTUAL_CONFIRMATION" = "publish 2.0.0 with latest"
+                  test "$ACTUAL_CONFIRMATION" = "publish $ACTUAL_VERSION with $ACTUAL_CHANNEL"
 
     verify:
         needs: authorize
@@ -53,7 +51,7 @@ jobs:
               env:
                   REQUESTED_CHANNEL: ${{ inputs.channel }}
               run: node scripts/verify-release-channel.mjs "$REQUESTED_CHANNEL"
-            - name: Verify 2.0.0 is absent from npm
+            - name: Verify requested version is absent from npm
               run: node scripts/verify-registry.mjs unpublished
             - name: Assert exactly one verified tarball
               run: |
@@ -114,14 +112,12 @@ jobs:
                   tarballs=(.artifacts/*.tgz)
                   test "${#tarballs[@]}" -eq 1
                   printf 'VERIFIED_TARBALL=%s\n' "${tarballs[0]}" >> "$GITHUB_ENV"
-            - name: Reconfirm 2.0.0 is absent from npm
+            - name: Reconfirm requested version is absent from npm
               run: node scripts/verify-registry.mjs unpublished
-            - name: Publish verified tarball for initial package bootstrap
+            - name: Publish verified tarball with npm trusted publishing
               env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
                   REQUESTED_CHANNEL: ${{ inputs.channel }}
               run: |
-                  test -n "$NODE_AUTH_TOKEN"
                   npm publish "$VERIFIED_TARBALL" \
                     --access public \
                     --tag "$REQUESTED_CHANNEL" \
