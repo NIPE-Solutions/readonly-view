@@ -25,6 +25,8 @@
         "build": "npm run build:dist",
         "build:dist": "npm run clean && vite build && npm run build:types",
         "build:types": "tsc --project tsconfig.build.json && rollup --config rollup.dts.config.mjs && node scripts/clean-types.mjs",
+        "benchmark": "npm run build:dist && node benchmarks/benchmark.mjs",
+        "benchmark:smoke": "npm run build:dist && node benchmarks/benchmark.mjs --smoke",
         "clean": "node scripts/clean.mjs",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
@@ -33,6 +35,7 @@
         "test:unit": "vitest run --project unit --passWithNoTests",
         "test:types": "tsc --project test/types/tsconfig.json --noEmit",
         "test:package": "npm run build:dist && node --test test/package/verify-package.test.mjs",
+        "test:size": "npm run build:dist && node scripts/check-bundle-size.mjs",
         "test:browser": "playwright test",
         "typecheck": "tsc --noEmit",
         "coverage": "vitest run --project unit --coverage"
