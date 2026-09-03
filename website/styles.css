@@ -78,19 +78,6 @@ button {
     gap: 72px;
     align-items: center;
 }
-.status {
-    font-size: 13px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.status span {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--success);
-}
 h1 {
     font-size: clamp(46px, 6vw, 82px);
     line-height: 0.98;
@@ -241,6 +228,11 @@ code {
     letter-spacing: -0.03em;
     margin: 0 0 22px;
 }
+.content h3 {
+    font-size: 18px;
+    letter-spacing: -0.015em;
+    margin: 0;
+}
 .content p,
 .content li,
 .content dd {
@@ -255,6 +247,19 @@ code {
     padding: 20px;
     border-radius: 9px;
     overflow: auto;
+}
+.example-grid {
+    display: grid;
+    gap: 28px;
+    margin-top: 36px;
+}
+.example {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+.example pre {
+    margin: 0;
 }
 .content code {
     font-size: 0.88em;
@@ -328,6 +333,12 @@ footer {
     justify-content: space-between;
     color: var(--muted);
     font-size: 13px;
+}
+footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px 22px;
 }
 :focus-visible {
     outline: 3px solid var(--blue);
@@ -405,6 +416,10 @@ footer {
         padding: 28px 20px;
         display: grid;
         gap: 8px;
+    }
+    footer nav {
+        display: grid;
+        justify-content: start;
     }
 }
 @media (prefers-reduced-motion: reduce) {
