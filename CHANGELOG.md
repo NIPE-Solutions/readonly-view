@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.0.0 - 2026-09-03
+
 ### Breaking Changes
 
 - Renamed `immuview` to `@nipe-solutions/readonly-view`.
@@ -27,7 +29,3 @@
 ### Documentation
 
 - Rewritten around readonly-view ownership.
-
-## 2.0.0
-
-Prepared but not released. Promote Unreleased notes when publishing.

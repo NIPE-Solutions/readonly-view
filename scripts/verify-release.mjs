@@ -24,7 +24,9 @@ assert(
 );
 assert(pkg.license === 'MIT', 'Package license must be MIT');
 assert(
-    pkg.files.length === 1 && pkg.files[0] === 'dist',
+    pkg.files.length === 2 &&
+        pkg.files.includes('dist') &&
+        pkg.files.includes('CHANGELOG.md'),
     'files allowlist changed',
 );
 assert(pkg.sideEffects === false, 'Package must remain side-effect free');
