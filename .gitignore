@@ -1,5 +1,9 @@
 /node_modules
 /dist
+/playwright-report
+/test-results
+/.worktrees
+/.artifacts
 # Logs
 logs
 *.log

@@ -1,0 +1,6 @@
+{
+    "esmMinified": 7000,
+    "esmGzip": 2500,
+    "declarations": 2500,
+    "packed": 10000
+}

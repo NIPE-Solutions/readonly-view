@@ -1,21 +1,6 @@
-import { readonly } from './ImmuView';
-
-export default readonly;
+export { DirectMutationError, UnsupportedTypeError } from './errors';
 export {
-    // errors
-    DirectMutationError,
-    ValidationError,
-    ErrorHandler,
-
-    // utils
-    deepMerge,
-    isObject,
-
-    // types
-    ReadonlyState,
-    ReadonlyStateOptions,
-    Validator,
-
-    // utility - export again for convenience
-    readonly,
-} from './ImmuView';
+    isKnownReadonlyView as isReadonlyView,
+    readonlyView,
+} from './membrane';
+export type { DeepReadonly } from './public-types';

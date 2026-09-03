@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose a focused readonly-view capability.
+title: 'proposal: '
+labels: [enhancement]
+body:
+    - type: textarea
+      id: problem
+      attributes:
+          label: Problem
+          description: What readonly-boundary problem cannot be solved today?
+      validations:
+          required: true
+    - type: textarea
+      id: semantics
+      attributes:
+          label: Required semantics
+          description: Explain mutation, identity, liveness, and type expectations.
+      validations:
+          required: true
+    - type: textarea
+      id: alternatives
+      attributes:
+          label: Alternatives considered
