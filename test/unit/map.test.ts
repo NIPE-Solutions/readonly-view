@@ -44,4 +44,18 @@ describe('Map', () => {
         );
         expect(source.size).toBe(1);
     });
+
+    it('supports the native forEach thisArg', () => {
+        const token = {};
+        const source = new Map([['key', 1]]);
+        const view = readonlyView(source);
+        let called = false;
+
+        view.forEach(function (this: unknown) {
+            expect(this).toBe(token);
+            called = true;
+        }, token);
+
+        expect(called).toBe(true);
+    });
 });

@@ -17,7 +17,22 @@ const arrayMutators = new Set<PropertyKey>([
 ]);
 
 function objectKind(source: object): string {
-    return Array.isArray(source) ? 'Array' : 'Object';
+    if (Array.isArray(source)) return 'Array';
+    if (source instanceof Map) return 'Map';
+    if (source instanceof Set) return 'Set';
+    if (source instanceof Date) return 'Date';
+    if (typeof source === 'function') return 'Function';
+    return 'Object';
+}
+
+function descriptorOwner(source: object, property: PropertyKey): object | null {
+    let current: object | null = source;
+    while (current !== null) {
+        if (Reflect.getOwnPropertyDescriptor(current, property) !== undefined)
+            return current;
+        current = Reflect.getPrototypeOf(current);
+    }
+    return null;
 }
 
 function mutation(
@@ -69,11 +84,18 @@ export function createMembrane(): Membrane {
         receiver: object,
         method: (...arguments_: unknown[]) => unknown,
     ): unknown {
-        return cachedMethod(source, property, () => {
-            if (arrayMutators.has(property)) {
-                return () => mutation(source, String(property));
-            }
+        if (arrayMutators.has(property)) {
+            return cachedMethod(
+                source,
+                property,
+                () => () => mutation(source, String(property)),
+            );
+        }
+        if (descriptorOwner(source, property) !== Array.prototype) {
+            return wrap(method);
+        }
 
+        return cachedMethod(source, property, () => {
             if (
                 property === Symbol.iterator ||
                 property === 'entries' ||
@@ -130,7 +152,20 @@ export function createMembrane(): Membrane {
         property: PropertyKey,
         receiver: object,
     ): unknown {
-        if (property === 'size') return source.size;
+        if (
+            property === 'size' &&
+            descriptorOwner(source, property) === Map.prototype
+        ) {
+            return source.size;
+        }
+        if (
+            property !== 'set' &&
+            property !== 'delete' &&
+            property !== 'clear' &&
+            descriptorOwner(source, property) !== Map.prototype
+        ) {
+            return wrap(Reflect.get(source, property, receiver));
+        }
         return cachedMethod(source, property, () => {
             if (
                 property === 'set' ||
@@ -153,9 +188,14 @@ export function createMembrane(): Membrane {
                         key: unknown,
                         map: object,
                     ) => void,
+                    thisArgument?: unknown,
                 ) =>
                     source.forEach((value, key) =>
-                        callback(wrap(value), wrap(key), receiver),
+                        Reflect.apply(callback, thisArgument, [
+                            wrap(value),
+                            wrap(key),
+                            receiver,
+                        ]),
                     );
             }
             const method: unknown = Reflect.get(source, property, source);
@@ -177,7 +217,20 @@ export function createMembrane(): Membrane {
         property: PropertyKey,
         receiver: object,
     ): unknown {
-        if (property === 'size') return source.size;
+        if (
+            property === 'size' &&
+            descriptorOwner(source, property) === Set.prototype
+        ) {
+            return source.size;
+        }
+        if (
+            property !== 'add' &&
+            property !== 'delete' &&
+            property !== 'clear' &&
+            descriptorOwner(source, property) !== Set.prototype
+        ) {
+            return wrap(Reflect.get(source, property, receiver));
+        }
         return cachedMethod(source, property, () => {
             if (
                 property === 'add' ||
@@ -197,10 +250,15 @@ export function createMembrane(): Membrane {
                         second: unknown,
                         set: object,
                     ) => void,
+                    thisArgument?: unknown,
                 ) =>
                     source.forEach((value) => {
                         const wrapped = wrap(value);
-                        callback(wrapped, wrapped, receiver);
+                        Reflect.apply(callback, thisArgument, [
+                            wrapped,
+                            wrapped,
+                            receiver,
+                        ]);
                     });
             }
             const method: unknown = Reflect.get(source, property, source);
@@ -217,9 +275,15 @@ export function createMembrane(): Membrane {
         });
     }
 
-    function dateProperty(source: Date, property: PropertyKey): unknown {
+    function dateProperty(
+        source: Date,
+        property: PropertyKey,
+        receiver: object,
+    ): unknown {
+        const native = descriptorOwner(source, property) === Date.prototype;
+        if (!native) return wrap(Reflect.get(source, property, receiver));
         const value: unknown = Reflect.get(source, property, source);
-        if (typeof value !== 'function') return value;
+        if (typeof value !== 'function') return wrap(value);
         return cachedMethod(source, property, () => {
             if (typeof property === 'string' && property.startsWith('set')) {
                 return () => mutation(source, property);
@@ -256,6 +320,7 @@ export function createMembrane(): Membrane {
                     return undefined;
                 }.bind(undefined)
               : (Object.create(Reflect.getPrototypeOf(source)) as object);
+        const viewReference: { current?: object } = {};
         const handler: ProxyHandler<object> = {
             apply(_target, thisArgument: unknown, argumentsList: unknown[]) {
                 const callableSource = source as (
@@ -273,7 +338,9 @@ export function createMembrane(): Membrane {
                 const constructed: unknown = Reflect.construct(
                     source as RuntimeConstructor,
                     argumentsList,
-                    newTarget,
+                    newTarget === viewReference.current
+                        ? (source as RuntimeConstructor)
+                        : newTarget,
                 );
                 return wrap(constructed) as object;
             },
@@ -285,7 +352,7 @@ export function createMembrane(): Membrane {
             },
             get(_target, property, receiver: object) {
                 if (source instanceof Date)
-                    return dateProperty(source, property);
+                    return dateProperty(source, property, receiver);
                 if (source instanceof Map) {
                     return mapProperty(source, property, receiver);
                 }
@@ -353,7 +420,7 @@ export function createMembrane(): Membrane {
                 return viewDescriptor;
             },
             getPrototypeOf() {
-                return Reflect.getPrototypeOf(source);
+                return wrap(Reflect.getPrototypeOf(source));
             },
             has(_target, property) {
                 return Reflect.has(source, property);
@@ -373,6 +440,7 @@ export function createMembrane(): Membrane {
         };
 
         const view = new Proxy(shadow, handler);
+        viewReference.current = view;
         sourceToView.set(source, view);
         viewToSource.set(view, source);
         knownViews.add(view);

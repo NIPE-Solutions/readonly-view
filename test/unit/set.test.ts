@@ -38,4 +38,17 @@ describe('Set', () => {
         );
         expect(source.size).toBe(1);
     });
+
+    it('supports the native forEach thisArg', () => {
+        const token = {};
+        const view = readonlyView(new Set([1]));
+        let called = false;
+
+        view.forEach(function (this: unknown) {
+            expect(this).toBe(token);
+            called = true;
+        }, token);
+
+        expect(called).toBe(true);
+    });
 });

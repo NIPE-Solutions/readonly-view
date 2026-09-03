@@ -45,6 +45,18 @@ view.date.setTime(0);
 const methodResult: string = view.method(1);
 void methodResult;
 
+declare const functionView: DeepReadonly<() => { value: number }>;
+// @ts-expect-error function results are deeply readonly at runtime and in types
+functionView().value = 2;
+
+declare class Constructed {
+    value: number;
+}
+declare const constructorView: DeepReadonly<typeof Constructed>;
+const constructed = new constructorView();
+// @ts-expect-error constructed results are deeply readonly
+constructed.value = 2;
+
 type RecursiveNode = {
     value: number;
     next?: RecursiveNode;

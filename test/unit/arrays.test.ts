@@ -7,7 +7,7 @@ describe('arrays', () => {
         const view = readonlyView(source);
 
         expect(Array.isArray(view)).toBe(true);
-        expect(Object.getPrototypeOf(view)).toBe(Array.prototype);
+        expect(Object.getPrototypeOf(view)).not.toBe(Array.prototype);
         expect(view.length).toBe(2);
         expect(view[0]).toBe(view[0]);
         expect(view[0]).not.toBe(source[0]);
@@ -18,6 +18,15 @@ describe('arrays', () => {
 
         source.length = 1;
         expect([...view].map((item) => item.value)).toEqual([1]);
+    });
+
+    it('observes replacement of custom method properties', () => {
+        const source = Object.assign([1], { read: (): number => 1 });
+        const view = readonlyView(source);
+
+        expect(view.read()).toBe(1);
+        source.read = () => 2;
+        expect(view.read()).toBe(2);
     });
 
     it('supports non-mutating methods with protected callback values', () => {

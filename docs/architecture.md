@@ -4,13 +4,13 @@ A membrane owns source-to-view and view-to-source WeakMaps. `wrap` classifies on
 
 ## Shadows and invariants
 
-Directly proxying a non-configurable, non-writable object property would require returning its exact mutable value. ReadonlyView proxies extensible shadows and virtualizes live descriptors. Objects/classes expose the source prototype; arrays use array shadows; functions use callable shadows; Map, Set, and Date use adapters.
+Directly proxying a non-configurable, non-writable object property would require returning its exact mutable value. ReadonlyView proxies extensible shadows and virtualizes live descriptors. Prototype objects are wrapped too, so reflection cannot recover a mutable custom prototype. Arrays use array shadows, functions use callable shadows, and Map, Set, and Date use dedicated adapters.
 
 Shadows remain extensible because `preventExtensions` throws, permitting live keys. Array `length` receives a compatible descriptor. Mutation traps never forward.
 
 ## Reads and methods
 
-Keys, membership, prototypes, and descriptors delegate to current source state. Object outputs from descriptors, accessors, iterators, callbacks, and collections are wrapped. Map/Set translate same-membrane view keys privately. User methods receive readonly `this`; native adapters receive valid internal-slot sources. Private fields may fail brand checks.
+Keys, membership, prototypes, and descriptors delegate to current source state, then object results pass through the membrane. Descriptor values, accessors, iterators, callbacks, collections, and prototypes cannot expose raw objects. Map/Set translate same-membrane view keys privately. Only exact native methods receive valid internal-slot sources; user-defined methods receive readonly `this`. Private fields may fail brand checks.
 
 ## Memory
 

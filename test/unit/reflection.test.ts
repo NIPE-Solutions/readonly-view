@@ -72,8 +72,8 @@ describe('view reflection', () => {
         expect(own).toBe(view.own);
     });
 
-    it('preserves null and custom prototype observation', () => {
-        const customPrototype = { inherited: true };
+    it('protects custom prototype observation and preserves null', () => {
+        const customPrototype = { inherited: { value: 1 } };
         const customSource = Object.create(customPrototype) as {
             value: number;
         };
@@ -82,9 +82,14 @@ describe('view reflection', () => {
             value: 1,
         });
 
-        expect(Object.getPrototypeOf(readonlyView(customSource))).toBe(
-            customPrototype,
-        );
+        const viewedPrototype = Object.getPrototypeOf(
+            readonlyView(customSource),
+        ) as { inherited: { value: number } };
+        expect(viewedPrototype).not.toBe(customPrototype);
+        expect(() =>
+            Reflect.set(viewedPrototype.inherited, 'value', 2),
+        ).toThrow(DirectMutationError);
+        expect(customPrototype.inherited.value).toBe(1);
         expect(Object.getPrototypeOf(readonlyView(nullSource))).toBeNull();
     });
 });

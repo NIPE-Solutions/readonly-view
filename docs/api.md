@@ -18,4 +18,4 @@ Field: `kind`.
 
 ## DeepReadonly
 
-A distributive recursive type for objects, arrays/tuples, Map, Set, Date, functions, optionals, nullability, symbols, unions, and recursive structures.
+A distributive recursive type for objects, arrays/tuples, Map, Set, Date, functions, constructors, optionals, nullability, symbols, unions, and recursive structures. Function and constructor results are deeply readonly. TypeScript cannot generically transform every overload or generic call signature without losing information; complex callable APIs may need a user-defined public interface.

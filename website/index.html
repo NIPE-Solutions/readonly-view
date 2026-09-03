@@ -235,7 +235,9 @@
                             function that closes over the source can still
                             mutate it. Private fields may fail their native
                             brand check because rebinding to the mutable source
-                            would be unsafe.
+                            would be unsafe. Prototype reflection is protected,
+                            so class views intentionally do not preserve
+                            <code>instanceof</code>.
                         </p>
                     </section>
                     <section id="identity">
