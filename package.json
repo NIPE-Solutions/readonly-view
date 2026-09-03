@@ -33,6 +33,7 @@
         "test:unit": "vitest run --project unit --passWithNoTests",
         "test:types": "tsc --project test/types/tsconfig.json --noEmit",
         "test:package": "npm run build:dist && node --test test/package/verify-package.test.mjs",
+        "test:browser": "playwright test",
         "typecheck": "tsc --noEmit",
         "coverage": "vitest run --project unit --coverage"
     },

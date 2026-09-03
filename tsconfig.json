@@ -21,5 +21,5 @@
         "types": ["node", "vitest/globals"]
     },
     "include": ["src", "test", "scripts", "*.config.ts", "*.config.js"],
-    "exclude": ["dist", "coverage", "website/dist"]
+    "exclude": ["dist", "coverage", "website/dist", "test/browser"]
 }

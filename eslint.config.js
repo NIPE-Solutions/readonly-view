@@ -9,6 +9,7 @@ export default tseslint.config(
             'dist/**',
             'node_modules/**',
             'test/types/**',
+            'test/browser/**',
             'website/dist/**',
         ],
     },
