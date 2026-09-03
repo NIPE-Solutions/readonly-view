@@ -24,10 +24,12 @@
     "scripts": {
         "build": "npm run build:dist",
         "build:dist": "npm run clean && vite build && npm run build:types",
+        "build:website": "npm run build:dist && vite build --config vite.website.config.ts",
         "build:types": "tsc --project tsconfig.build.json && rollup --config rollup.dts.config.mjs && node scripts/clean-types.mjs",
         "benchmark": "npm run build:dist && node benchmarks/benchmark.mjs",
         "benchmark:smoke": "npm run build:dist && node benchmarks/benchmark.mjs --smoke",
         "clean": "node scripts/clean.mjs",
+        "dev:website": "vite --config vite.website.config.ts",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "lint": "eslint . --max-warnings 0",
@@ -36,6 +38,7 @@
         "test:types": "tsc --project test/types/tsconfig.json --noEmit",
         "test:package": "npm run build:dist && node --test test/package/verify-package.test.mjs",
         "test:size": "npm run build:dist && node scripts/check-bundle-size.mjs",
+        "test:website": "npm run build:website && node scripts/verify-website.mjs",
         "test:browser": "playwright test",
         "typecheck": "tsc --noEmit",
         "coverage": "vitest run --project unit --coverage"

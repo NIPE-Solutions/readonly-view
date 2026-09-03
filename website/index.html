@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="description"
+            content="ReadonlyView creates deeply readonly, lazy, live views over mutable JavaScript data."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="ReadonlyView" />
+        <meta
+            property="og:description"
+            content="A deeply readonly, lazy, live view over mutable JavaScript data."
+        />
+        <meta property="og:image" content="/og.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <title>ReadonlyView — a live readonly membrane</title>
+        <link rel="stylesheet" href="./styles.css" />
+    </head>
+    <body>
+        <header class="masthead">
+            <a class="brand" href="#top"
+                ><span class="brand-mark">R</span><span>ReadonlyView</span></a
+            >
+            <span class="collection">NIPE primitives / 01</span>
+            <nav aria-label="Primary">
+                <a href="#docs">Docs</a
+                ><a href="https://github.com/NIPE-Solutions/readonly-view"
+                    >GitHub</a
+                >
+            </nav>
+        </header>
+        <main id="top">
+            <section class="hero">
+                <div class="hero-copy">
+                    <p class="status">
+                        <span></span> v2 alpha · zero runtime dependencies
+                    </p>
+                    <h1>The source stays mutable.<br />The view does not.</h1>
+                    <p class="lede">
+                        A deeply readonly, lazy, live view over mutable
+                        JavaScript data. Runtime enforcement and TypeScript
+                        types, without cloning or freezing.
+                    </p>
+                    <div class="install">
+                        <code>npm install @nipe-solutions/readonly-view</code
+                        ><button data-copy aria-label="Copy install command">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+                <div
+                    class="membrane-demo"
+                    aria-label="Interactive live view example"
+                >
+                    <div class="demo-bar">
+                        <span>owner.ts</span><span>public.ts</span>
+                    </div>
+                    <div class="demo-grid">
+                        <div>
+                            <p>Mutable source</p>
+                            <pre><code>source.user.name = <b>'Bob'</b></code></pre>
+                            <button id="owner-mutate">
+                                Run owner mutation
+                            </button>
+                        </div>
+                        <div>
+                            <p>Readonly view</p>
+                            <pre><code>view.user.name = <b>'Eve'</b></code></pre>
+                            <button id="view-mutate">Try view mutation</button>
+                        </div>
+                    </div>
+                    <output id="demo-output">view.user.name → 'Alice'</output>
+                </div>
+            </section>
+            <section class="proof" aria-label="Core guarantees">
+                <article>
+                    <strong>Live</strong
+                    ><span>Owner changes appear immediately.</span>
+                </article>
+                <article>
+                    <strong>Lazy</strong
+                    ><span>Nested proxies exist only when read.</span>
+                </article>
+                <article>
+                    <strong>Deep</strong
+                    ><span>Every supported exposure route is wrapped.</span>
+                </article>
+                <article>
+                    <strong>Small</strong
+                    ><span>1.7 kB minified + gzip baseline.</span>
+                </article>
+            </section>
+
+            <div class="docs-layout" id="docs">
+                <aside class="sidebar">
+                    <nav aria-label="Documentation">
+                        <a href="#introduction">Introduction</a
+                        ><a href="#ownership">Ownership model</a
+                        ><a href="#guarantees">Guarantees</a
+                        ><a href="#types">Supported types</a
+                        ><a href="#objects">Objects & arrays</a
+                        ><a href="#collections">Map & Set</a
+                        ><a href="#date">Date</a
+                        ><a href="#functions">Functions & classes</a
+                        ><a href="#identity">Cycles & identity</a
+                        ><a href="#reflection">Symbols & descriptors</a
+                        ><a href="#invariants">Proxy invariants</a
+                        ><a href="#typescript">TypeScript</a
+                        ><a href="#performance">Performance</a
+                        ><a href="#security">Security</a><a href="#api">API</a
+                        ><a href="#migration">Migration</a><a href="#faq">FAQ</a
+                        ><a href="#contributing">Contributing</a>
+                    </nav>
+                </aside>
+                <article class="content">
+                    <section id="introduction">
+                        <h2>Introduction</h2>
+                        <p>
+                            ReadonlyView gives consumers a stable read surface
+                            while the owner keeps the ordinary mutable source.
+                            It is a membrane, not state management.
+                        </p>
+                        <pre><code>const view = readonlyView(source)</code></pre>
+                    </section>
+                    <section id="ownership">
+                        <h2>Ownership model</h2>
+                        <p>
+                            Keep the source private. Export the view. Mutate
+                            only through the source reference; existing views
+                            observe replacement, addition, deletion, collection
+                            changes, and Date changes.
+                        </p>
+                    </section>
+                    <section id="guarantees">
+                        <h2>Runtime guarantees</h2>
+                        <ul>
+                            <li>
+                                Every write through a supported view throws.
+                            </li>
+                            <li>
+                                The source is never frozen, sealed, cloned, or
+                                intentionally changed.
+                            </li>
+                            <li>
+                                Nested values are wrapped lazily and cached by
+                                identity.
+                            </li>
+                            <li>Unsupported native values fail explicitly.</li>
+                        </ul>
+                        <p class="note">
+                            ReadonlyView is not a sandbox. Closures and getters
+                            can cause external side effects.
+                        </p>
+                    </section>
+                    <section id="types">
+                        <h2>Supported types</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Value</th>
+                                    <th>Status</th>
+                                    <th>Semantics</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Object, Array, Map, Set, Date</td>
+                                    <td><span class="tag full">Full</span></td>
+                                    <td>Live and deeply protected</td>
+                                </tr>
+                                <tr>
+                                    <td>Function, custom class</td>
+                                    <td>
+                                        <span class="tag documented"
+                                            >Documented</span
+                                        >
+                                    </td>
+                                    <td>
+                                        Readonly receiver; private brands may
+                                        reject
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        RegExp, Error, URL, buffers, typed
+                                        arrays, weak collections, Promise
+                                    </td>
+                                    <td>
+                                        <span class="tag unsupported"
+                                            >Unsupported</span
+                                        >
+                                    </td>
+                                    <td>
+                                        Throws instead of leaking mutation
+                                        access
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+                    <section id="objects">
+                        <h2>Objects and arrays</h2>
+                        <p>
+                            Properties, symbols, getters, descriptors, indexes,
+                            callbacks, spread, and iteration all pass exposed
+                            values through the same membrane. Array identity is
+                            preserved with <code>Array.isArray(view)</code>.
+                        </p>
+                    </section>
+                    <section id="collections">
+                        <h2>Map and Set</h2>
+                        <p>
+                            Reads, keys, values, entries, iteration, size, and
+                            forEach work with wrapped values. <code>set</code>,
+                            <code>add</code>, <code>delete</code>, and
+                            <code>clear</code> throw. A view key from the same
+                            membrane remains usable for lookup.
+                        </p>
+                    </section>
+                    <section id="date">
+                        <h2>Date</h2>
+                        <p>
+                            Native reads use a valid Date receiver. Every
+                            available <code>set*</code> method is blocked. The
+                            source Date remains mutable and live.
+                        </p>
+                    </section>
+                    <section id="functions">
+                        <h2>Functions and custom classes</h2>
+                        <p>
+                            User methods receive the readonly receiver, so
+                            <code>this.balance -= amount</code> throws. A
+                            function that closes over the source can still
+                            mutate it. Private fields may fail their native
+                            brand check because rebinding to the mutable source
+                            would be unsafe.
+                        </p>
+                    </section>
+                    <section id="identity">
+                        <h2>Circular references and shared identity</h2>
+                        <p>
+                            Within one membrane, one source maps to one
+                            view—even across properties, arrays, Map, Set, and
+                            cycles. Separate top-level calls create independent
+                            membranes.
+                        </p>
+                    </section>
+                    <section id="reflection">
+                        <h2>Symbols and property descriptors</h2>
+                        <p>
+                            Own keys, symbols, membership, enumeration,
+                            descriptors, accessors, spread, and destructuring
+                            behave live. Descriptor values are views, never raw
+                            nested sources.
+                        </p>
+                    </section>
+                    <section id="invariants">
+                        <h2>Proxy invariants</h2>
+                        <p>
+                            Controlled extensible shadow targets avoid the
+                            non-configurable-property escape inherent in
+                            directly proxying arbitrary sources. View
+                            descriptors describe the virtual view while source
+                            descriptors remain untouched.
+                        </p>
+                    </section>
+                    <section id="typescript">
+                        <h2>Compile-time guarantees</h2>
+                        <p>
+                            <code>DeepReadonly&lt;T&gt;</code> handles unions,
+                            recursion, tuples, arrays, Map, Set, Date, symbols,
+                            optionals, nullability, and callable types.
+                        </p>
+                    </section>
+                    <section id="performance">
+                        <h2>Performance</h2>
+                        <p>
+                            Initial creation wraps one value. Reads carry proxy
+                            overhead; collection adapters allocate protected
+                            iterator results. Size and methodology are checked
+                            in the repository without performance marketing
+                            claims.
+                        </p>
+                    </section>
+                    <section id="security">
+                        <h2>Security and trust model</h2>
+                        <p>
+                            No evaluation, serialization, source writes, or
+                            eager getter calls. Consumer proxies and arbitrary
+                            user code remain trusted inputs. Mutable
+                            backing-memory types are rejected.
+                        </p>
+                    </section>
+                    <section id="api">
+                        <h2>API reference</h2>
+                        <dl>
+                            <dt><code>readonlyView(source)</code></dt>
+                            <dd>Create a deeply readonly live view.</dd>
+                            <dt><code>isReadonlyView(value)</code></dt>
+                            <dd>Recognize package views.</dd>
+                            <dt><code>DirectMutationError</code></dt>
+                            <dd>Mutation metadata and safe message.</dd>
+                            <dt><code>UnsupportedTypeError</code></dt>
+                            <dd>Rejected type kind.</dd>
+                            <dt><code>DeepReadonly&lt;T&gt;</code></dt>
+                            <dd>Public recursive readonly type.</dd>
+                        </dl>
+                    </section>
+                    <section id="migration">
+                        <h2>Migration from ImmuView v1</h2>
+                        <pre><code>// v1
+const state = readonly(data)
+state.internalSet(next)
+
+// v2
+const source = data
+const state = readonlyView(source)
+source.count += 1</code></pre>
+                        <p>
+                            The package is now
+                            <code>@nipe-solutions/readonly-view</code>. The
+                            wrapper <code>.value</code>, validation, deep merge,
+                            and mutation lifecycle are gone.
+                        </p>
+                    </section>
+                    <section id="faq">
+                        <h2>FAQ</h2>
+                        <details>
+                            <summary>Is this Object.freeze?</summary>
+                            <p>
+                                No. The source remains mutable and the view
+                                stays live.
+                            </p>
+                        </details>
+                        <details>
+                            <summary>Why reject types?</summary>
+                            <p>
+                                Explicit failure is safer than accidental native
+                                mutation access.
+                            </p>
+                        </details>
+                    </section>
+                    <section id="contributing">
+                        <h2>Contributing</h2>
+                        <p>
+                            Use Node 24 and run <code>npm run check</code>. Add
+                            a failing regression test before each bug fix.
+                        </p>
+                    </section>
+                </article>
+                <aside class="toc">
+                    <p>On this page</p>
+                    <a href="#introduction">Introduction</a
+                    ><a href="#guarantees">Guarantees</a
+                    ><a href="#types">Types</a><a href="#api">API</a>
+                </aside>
+            </div>
+        </main>
+        <footer>
+            <span>ReadonlyView</span
+            ><span>One focused primitive in the NIPE collection.</span
+            ><span>MIT</span>
+        </footer>
+        <script type="module" src="./main.ts"></script>
+    </body>
+</html>
