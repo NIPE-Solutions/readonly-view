@@ -371,6 +371,10 @@ footer nav {
         grid-template-columns: 1fr auto;
         padding: 0 18px;
     }
+    .masthead nav {
+        gap: 12px;
+        font-size: 12px;
+    }
     .collection {
         display: none;
     }

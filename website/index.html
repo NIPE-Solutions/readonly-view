@@ -160,7 +160,8 @@
                         <h2>Examples</h2>
                         <p>
                             Each example uses the public API and can be copied
-                            into a modern JavaScript or TypeScript project.
+                            into a modern JavaScript project. TypeScript rejects
+                            the mutation lines before they reach runtime.
                         </p>
                         <pre><code>import { readonlyView } from '@nipe-solutions/readonly-view'</code></pre>
                         <div class="example-grid">
@@ -173,8 +174,13 @@ Reflect.set(view.user, 'name', 'Eve') // throws</code></pre>
                             </article>
                             <article class="example">
                                 <h3>Owner-side live updates</h3>
-                                <pre><code>source.user.name = 'Bob'
-view.user.name // 'Bob'</code></pre>
+                                <pre><code>import { readonlyView } from '@nipe-solutions/readonly-view'
+
+const source = { user: { name: 'Alice' } }
+const view = readonlyView(source)
+
+source.user.name = 'Bob'
+console.log(view.user.name) // 'Bob'</code></pre>
                             </article>
                             <article class="example">
                                 <h3>Arrays</h3>
@@ -228,10 +234,22 @@ view.items[0] === view.map.get('selected') // true
                             </article>
                             <article class="example">
                                 <h3>Mutation rejection</h3>
-                                <pre><code>try {
-  Reflect.set(view.items[0], 'id', 2)
+                                <pre><code>import {
+  DirectMutationError,
+  readonlyView,
+} from '@nipe-solutions/readonly-view'
+
+const source = { item: { id: 1 } }
+const view = readonlyView(source)
+
+try {
+  Reflect.set(view.item, 'id', 2)
 } catch (error) {
-  error.name // 'DirectMutationError'
+  if (error instanceof DirectMutationError) {
+    console.log(error.name) // 'DirectMutationError'
+  } else {
+    throw error
+  }
 }</code></pre>
                             </article>
                         </div>

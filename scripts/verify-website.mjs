@@ -67,6 +67,42 @@ for (const example of [
         throw new Error('Missing website example: ' + example);
 }
 
+function exampleCard(heading) {
+    const marker = `<h3>${heading}</h3>`;
+    const start = home.indexOf(marker);
+    const end = home.indexOf('</article>', start);
+    if (start < 0 || end < 0)
+        throw new Error('Missing website example card: ' + heading);
+    return home.slice(start, end);
+}
+
+for (const [heading, expectedContent] of [
+    [
+        'Owner-side live updates',
+        [
+            "import { readonlyView } from '@nipe-solutions/readonly-view'",
+            'const source =',
+            'const view = readonlyView(source)',
+        ],
+    ],
+    [
+        'Mutation rejection',
+        [
+            'DirectMutationError',
+            "from '@nipe-solutions/readonly-view'",
+            'const source =',
+            'const view = readonlyView(source)',
+            'error instanceof DirectMutationError',
+        ],
+    ],
+]) {
+    const card = exampleCard(heading);
+    for (const content of expectedContent) {
+        if (!card.includes(content))
+            throw new Error(`${heading} example is not standalone: ${content}`);
+    }
+}
+
 const iconAssets = [
     '/favicon.svg',
     '/favicon-32x32.png',
@@ -86,15 +122,39 @@ for (const asset of iconAssets) {
 }
 
 const origin = 'https://readonly-view.nipesolutions.com';
-const canonicalUrls = [
-    `${origin}/`,
-    ...[...pages.keys()].map(
-        (path) => `${origin}/${path.replace('index.html', '')}`,
-    ),
-];
-for (const url of canonicalUrls) {
-    if (![...pageHtml.values()].some((html) => html.includes(url)))
-        throw new Error('Missing canonical page URL: ' + url);
+const canonicalUrls = [];
+for (const [path, html] of pageHtml) {
+    const route = path === 'index.html' ? '' : path.replace('index.html', '');
+    const expectedUrl = `${origin}/${route}`;
+    canonicalUrls.push(expectedUrl);
+
+    const canonicalTags = (html.match(/<link\b[^>]*>/g) ?? []).filter((tag) =>
+        tag.includes('rel="canonical"'),
+    );
+    if (canonicalTags.length !== 1)
+        throw new Error(
+            `${path} has ${canonicalTags.length} canonical tags; expected 1`,
+        );
+    const canonicalTag = canonicalTags[0];
+    const canonicalUrl = canonicalTag?.match(/href="([^"]+)"/)?.[1];
+    if (canonicalUrl !== expectedUrl)
+        throw new Error(
+            `${path} canonical URL is ${canonicalUrl ?? 'missing'}; expected ${expectedUrl}`,
+        );
+
+    const openGraphTags = (html.match(/<meta\b[^>]*>/g) ?? []).filter((tag) =>
+        tag.includes('property="og:url"'),
+    );
+    if (openGraphTags.length !== 1)
+        throw new Error(
+            `${path} has ${openGraphTags.length} Open Graph URL tags; expected 1`,
+        );
+    const openGraphTag = openGraphTags[0];
+    const openGraphUrl = openGraphTag?.match(/content="([^"]+)"/)?.[1];
+    if (openGraphUrl !== expectedUrl)
+        throw new Error(
+            `${path} Open Graph URL is ${openGraphUrl ?? 'missing'}; expected ${expectedUrl}`,
+        );
 }
 
 const robots = await readFile(new URL('robots.txt', distUrl), 'utf8');

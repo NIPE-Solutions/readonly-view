@@ -11,6 +11,8 @@
 .legal-header h1 {
     margin: 18px 0 24px;
     font-size: clamp(48px, 7vw, 76px);
+    overflow-wrap: anywhere;
+    hyphens: auto;
 }
 .legal-kicker {
     margin: 0;
@@ -88,7 +90,7 @@
         padding-bottom: 40px;
     }
     .legal-header h1 {
-        font-size: clamp(42px, 14vw, 60px);
+        font-size: clamp(38px, 12vw, 52px);
     }
     .legal-content {
         grid-template-columns: 1fr;

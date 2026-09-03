@@ -17,6 +17,34 @@ it('matches the primary ownership example', () => {
     expect(view.user).toEqual({ name: 'Bob', roles: ['admin', 'editor'] });
 });
 
+it('matches the standalone owner-side live updates example', () => {
+    const source = { user: { name: 'Alice' } };
+    const view = readonlyView(source);
+
+    source.user.name = 'Bob';
+
+    expect(view.user.name).toBe('Bob');
+});
+
+it('matches the standalone mutation rejection example', () => {
+    const source = { item: { id: 1 } };
+    const view = readonlyView(source);
+
+    let errorName: string | undefined;
+    try {
+        Reflect.set(view.item, 'id', 2);
+    } catch (error) {
+        if (error instanceof DirectMutationError) {
+            errorName = error.name;
+        } else {
+            throw error;
+        }
+    }
+
+    expect(errorName).toBe('DirectMutationError');
+    expect(source.item.id).toBe(1);
+});
+
 it('keeps array, Map, Set, and Date reads live while rejecting writes', () => {
     const source = {
         items: [{ id: 1 }],
