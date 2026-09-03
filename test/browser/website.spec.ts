@@ -82,11 +82,37 @@ for (const [route, heading, language] of legalRoutes) {
                     mastheadWidths.client,
                 );
             }
+            const layout = await page.evaluate(() => {
+                const viewport = document.documentElement.clientWidth;
+                const overflow = Array.from(
+                    document.querySelectorAll<HTMLElement>('body *'),
+                ).flatMap((element) => {
+                    const rect = element.getBoundingClientRect();
+                    if (rect.left >= 0 && Math.ceil(rect.right) <= viewport) {
+                        return [];
+                    }
+                    return [
+                        {
+                            element:
+                                element.tagName.toLowerCase() +
+                                (element.className
+                                    ? `.${element.className.split(' ').join('.')}`
+                                    : ''),
+                            left: Number(rect.left.toFixed(2)),
+                            right: Number(rect.right.toFixed(2)),
+                        },
+                    ];
+                });
+                return {
+                    body: document.body.scrollWidth,
+                    overflow,
+                    viewport,
+                };
+            });
             expect(
-                await page.evaluate(() => document.body.scrollWidth),
-            ).toBeLessThanOrEqual(
-                await page.evaluate(() => document.documentElement.clientWidth),
-            );
+                layout.body,
+                JSON.stringify(layout.overflow),
+            ).toBeLessThanOrEqual(layout.viewport);
         });
     }
 }
