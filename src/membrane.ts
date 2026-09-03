@@ -3,6 +3,7 @@ import { DirectMutationError } from './errors';
 import type { DeepReadonly } from './public-types';
 
 const knownViews = new WeakSet<object>();
+type RuntimeConstructor = new (...arguments_: never[]) => object;
 
 function objectKind(source: object): string {
     return Array.isArray(source) ? 'Array' : 'Object';
@@ -42,8 +43,34 @@ export function createMembrane(): Membrane {
         if (cached !== undefined) return cached as DeepReadonly<T>;
 
         const source = value;
-        const shadow = Object.create(Reflect.getPrototypeOf(source)) as object;
+        const shadow =
+            typeof source === 'function'
+                ? function callableShadow(...arguments_: unknown[]): unknown {
+                      void arguments_;
+                      return undefined;
+                  }.bind(undefined)
+                : (Object.create(Reflect.getPrototypeOf(source)) as object);
         const handler: ProxyHandler<object> = {
+            apply(_target, thisArgument: unknown, argumentsList: unknown[]) {
+                const callableSource = source as (
+                    ...arguments_: unknown[]
+                ) => unknown;
+                return wrap(
+                    Reflect.apply(callableSource, thisArgument, argumentsList),
+                );
+            },
+            construct(
+                _target,
+                argumentsList: unknown[],
+                newTarget: RuntimeConstructor,
+            ) {
+                const constructed: unknown = Reflect.construct(
+                    source as RuntimeConstructor,
+                    argumentsList,
+                    newTarget,
+                );
+                return wrap(constructed) as object;
+            },
             defineProperty(_target, property) {
                 return mutation(source, 'define property', property);
             },
