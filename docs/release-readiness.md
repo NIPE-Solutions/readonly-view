@@ -62,11 +62,11 @@ CI runs the Node 24 quality gate, Node 22 compatibility, and
 Chromium/Firefox/WebKit jobs. Release is manual, main-only, exact-confirmation
 gated, environment protected, checks version/channel policy and registry
 availability, carries the verified tarball through the browser gate, and waits
-for propagation before creating a SHA-targeted GitHub release. The first
-publication uses a short-lived granular `NPM_TOKEN` environment secret plus
-OIDC provenance. After the package exists, that token must be revoked and
-deleted and the documented npm trusted publisher must replace it for future
-releases.
+for propagation before creating a SHA-targeted GitHub release. The initial
+publication used a short-lived granular token plus OIDC provenance. That
+bootstrap token and its GitHub secret were revoked after publication. Future
+releases use the configured npm trusted publisher and short-lived OIDC
+credentials only.
 
 The local browser command passed all 22 scheduled tests: 11 on Chromium and 11
 on Firefox. Playwright deliberately excluded WebKit on this macOS 14 host under
