@@ -12,6 +12,10 @@ function assert(condition, message) {
 }
 
 assert(pkg.name === '@nipe-solutions/readonly-view', 'Unexpected package name');
+assert(
+    pkg.homepage === 'https://readonly-view.nipesolutions.com',
+    'Homepage is stale',
+);
 assert(pkg.version === lock.version, 'package-lock root version is stale');
 assert(
     pkg.version === lock.packages[''].version,
@@ -27,6 +31,13 @@ assert(
     pkg.repository.url.includes('NIPE-Solutions/readonly-view'),
     'Repository metadata is stale',
 );
+
+const vercel = JSON.parse(await readFile(resolve(root, 'vercel.json'), 'utf8'));
+assert(
+    vercel.buildCommand === 'npm run build:website',
+    'Unexpected Vercel build',
+);
+assert(vercel.outputDirectory === 'website/dist', 'Unexpected Vercel output');
 
 for (const file of [
     'LICENSE',

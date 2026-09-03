@@ -16,4 +16,6 @@
 
 The emitted JavaScript targets ES2022. “Current browser” means the versions installed by the lockfile's Playwright release, not every historical browser with Proxy support.
 
+Current documentation is published at [readonly-view.nipesolutions.com](https://readonly-view.nipesolutions.com).
+
 On macOS 14, the current Playwright WebKit bundle has an upstream launch-protocol incompatibility. Local configuration omits that one project on that OS; the Linux CI matrix remains authoritative for WebKit support.
