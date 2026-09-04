@@ -1,10 +1,10 @@
 # ReadonlyView 2.0 release readiness
 
-Status: the stable `2.0.0` release candidate passed its complete local gate on
-2026-09-03 using macOS 14.6.1 arm64, Node 24.20.0, and npm 11.19.0. Main-branch
-CI, Vercel production deployment, the protected `npm` environment, and
-first-publication authentication remain external release prerequisites. No
-package or website was published by this work.
+Status: **STABLE READY and released.** `2.0.0` passed its complete local gate on
+2026-09-03 using macOS 14.6.1 arm64, Node 24.20.0, and npm 11.19.0. It was
+published publicly with provenance, released on GitHub, and deployed to the
+production documentation origin. The subsequent trusted-publishing update is
+merged to `main`, whose full CI matrix is green.
 
 ## 1. Architecture
 
@@ -51,10 +51,11 @@ maps, or private modules. The tarball is installed into an isolated consumer
 and exercised through ESM, CommonJS, strict TypeScript, esbuild, tree shaking,
 and blocked private imports. Runtime dependencies: zero.
 
-The inspected `.artifacts/nipe-solutions-readonly-view-2.0.0.tgz` is 6,971 B
-packed and 33,691 B unpacked. Its SHA-1 is
-`de84bb58a5ab30d6cfa3152f26d491e59d5aee82`; npm reported integrity
-`sha512-vXQXfQNoO7LeTxFexZxSDY93NUClX04ZRl1CFjH8jCIcBIkwrUGL5uD5wkpMYvX05PMjIv+XefQ8I9LSbcbQmw==`.
+The release-candidate `.artifacts/nipe-solutions-readonly-view-2.0.0.tgz` was
+6,971 B packed and 33,691 B unpacked. The public registry reports the same
+seven-file manifest and 33,691 B unpacked, SHA-1
+`9463b4d177b3dfbb088306b73afb92240d1eb2ac`, and integrity
+`sha512-WqdJb4ZZayPgtgngLM1SpwUXar7T4CNyypjJikecqn7kT0govmugnKej0Fce2AnYFWuFaNsENASH6mwWJfWx4w==`.
 
 ## 9. CI and release
 
@@ -68,10 +69,18 @@ bootstrap token and its GitHub secret were revoked after publication. Future
 releases use the configured npm trusted publisher and short-lived OIDC
 credentials only.
 
+`@nipe-solutions/readonly-view@2.0.0` is public under `latest`. Its npm
+attestation reports SLSA provenance. GitHub release `v2.0.0` targets the
+reviewed release commit `251b0c9e86740a681c50426569c50651290db140`. The first
+release workflow published successfully but timed out while polling registry
+propagation, so the SHA-targeted GitHub release was completed separately after
+the registry became available. This did not change the published artifact.
+
 The local browser command passed all 22 scheduled tests: 11 on Chromium and 11
 on Firefox. Playwright deliberately excluded WebKit on this macOS 14 host under
-the repository's documented upstream-compatibility rule; the Linux CI WebKit
-job remains required.
+the repository's documented upstream-compatibility rule. Linux CI subsequently
+passed Chromium, Firefox, and WebKit together with the Node 24 quality and Node
+22 compatibility jobs.
 
 ## 10. Documentation
 
@@ -98,21 +107,19 @@ ReadonlyView is not a sandbox. Generic/overloaded callable types cannot always
 be transformed without losing signature information. Custom class views do
 not preserve `instanceof`; private fields can reject proxy receivers.
 Cross-realm and consumer-proxy behavior is limited by the supplied realm/proxy.
-WebKit is excluded locally on macOS 14 and must be proven by the Linux CI job.
+WebKit is excluded locally on macOS 14 and is therefore verified in Linux CI.
 
-## 14. Recommended follow-up
+## 14. Release evidence and remaining scope
 
-Push the reviewed branch and open a pull request; require green Node 24 quality,
-Node 22 compatibility, Chromium, Firefox, WebKit, and Vercel preview checks.
-After merge, require green `main` CI, link the Vercel project, configure the
-exact Vercel-provided GoDaddy DNS record, and verify HTTPS plus every production
-route. Then configure the protected `npm` environment and short-lived granular
-bootstrap token, dispatch the exact stable release, and verify registry
-propagation, provenance, dist-tags, consumer import, and the SHA-targeted GitHub
-release. Finally revoke and delete the bootstrap token and configure the
-documented npm trusted publisher for future OIDC releases. Bun, Deno, older
-TypeScript, and additional native adapters should be claimed only after
-dedicated CI.
+- Production documentation: <https://readonly-view.nipesolutions.com>
+- npm: <https://www.npmjs.com/package/@nipe-solutions/readonly-view/v/2.0.0>
+- GitHub release: <https://github.com/NIPE-Solutions/readonly-view/releases/tag/v2.0.0>
+- Green post-release `main` CI: <https://github.com/NIPE-Solutions/readonly-view/actions/runs/33813908218>
+- Production Vercel deployment: commit
+  `962e6a00778ba83a24f303b6fd3fd3b0e90d8b6a`
+
+No blocker remains for `2.0.0`. Bun, Deno, older TypeScript, and additional
+native adapters remain deliberately unclaimed until they receive dedicated CI.
 
 ## Local verification
 
