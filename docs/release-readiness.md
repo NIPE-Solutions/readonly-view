@@ -8,7 +8,7 @@ merged to `main`, whose full CI matrix is green.
 
 ## 1. Architecture
 
-Each `readonlyView` call creates an independent WeakMap-backed membrane. Controlled extensible shadow targets preserve proxy invariants without modifying sources. Values are wrapped lazily, identity is stable inside a membrane, and Map, Set, and Date use narrow native adapters.
+Each `readonlyView` call creates an independent WeakMap-backed membrane. Controlled extensible shadow targets preserve proxy invariants without modifying sources. Values are wrapped lazily, identity is stable inside a membrane, and Map, Set, and Date use explicit, fail-closed native-member inventories.
 
 ## 2. Public API
 

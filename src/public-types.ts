@@ -4,6 +4,37 @@ type DateMutator = Extract<keyof Date, `set${string}`>;
 
 type ReadonlyDate = Readonly<Omit<Date, DateMutator>>;
 
+type ReadonlySetOperand<Value> = {
+    readonly size: number;
+    has(value: Value): boolean;
+    keys(): Iterator<Value>;
+};
+
+type DeepReadonlySetMethods<Value> = {
+    union<Other>(
+        other: ReadonlySetOperand<Other>,
+    ): DeepReadonlySetView<Value | DeepReadonly<Other>>;
+    intersection<Other>(
+        other: ReadonlySetOperand<Other>,
+    ): DeepReadonlySetView<Value & DeepReadonly<Other>>;
+    difference<Other>(
+        other: ReadonlySetOperand<Other>,
+    ): DeepReadonlySetView<Value>;
+    symmetricDifference<Other>(
+        other: ReadonlySetOperand<Other>,
+    ): DeepReadonlySetView<Value | DeepReadonly<Other>>;
+    isSubsetOf(other: ReadonlySetOperand<unknown>): boolean;
+    isSupersetOf(other: ReadonlySetOperand<unknown>): boolean;
+    isDisjointFrom(other: ReadonlySetOperand<unknown>): boolean;
+};
+
+type DeepReadonlySetView<Value> = DeepReadonlySetMethods<Value> &
+    ReadonlySet<Value>;
+
+type DeepReadonlySet<Value> = 'union' extends keyof ReadonlySet<unknown>
+    ? DeepReadonlySetView<DeepReadonly<Value>>
+    : ReadonlySet<DeepReadonly<Value>>;
+
 type DeepReadonlyFunction<T extends (...arguments_: never[]) => unknown> = ((
     ...arguments_: Parameters<T>
 ) => DeepReadonly<ReturnType<T>>) & {
@@ -31,7 +62,7 @@ export type DeepReadonly<T> = T extends Primitive
             : T extends ReadonlyMap<infer Key, infer Value>
               ? ReadonlyMap<DeepReadonly<Key>, DeepReadonly<Value>>
               : T extends ReadonlySet<infer Value>
-                ? ReadonlySet<DeepReadonly<Value>>
+                ? DeepReadonlySet<Value>
                 : T extends object
                   ? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
                   : T;

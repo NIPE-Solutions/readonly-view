@@ -10,7 +10,7 @@ Shadows remain extensible because `preventExtensions` throws, permitting live ke
 
 ## Reads and methods
 
-Keys, membership, prototypes, and descriptors delegate to current source state, then object results pass through the membrane. Descriptor values, accessors, iterators, callbacks, collections, and prototypes cannot expose raw objects. Map/Set translate same-membrane view keys privately. Only exact native methods receive valid internal-slot sources; user-defined methods receive readonly `this`. Private fields may fail brand checks.
+Keys, membership, prototypes, and descriptors delegate to current source state, then object results pass through the membrane. Descriptor values, accessors, iterators, callbacks, collections, and prototypes cannot expose raw objects. Map/Set translate same-membrane view keys privately. Map, Set, and Date use explicit prototype-member inventories: only reviewed native methods receive valid internal-slot sources, known mutators reject before invocation, and unclassified native members fail closed. Available modern Set composition methods return readonly Set views. User-defined methods receive readonly `this`. Private fields may fail brand checks.
 
 ## Memory
 
