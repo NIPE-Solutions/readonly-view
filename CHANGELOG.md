@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 2.0.1 - 2026-09-04
+
+### Fixed
+
+- Replaced open-ended Map, Set, and Date native-method dispatch with explicit,
+  fail-closed member inventories.
+- Blocked `Map.prototype.getOrInsert` and `getOrInsertComputed` where available.
+- Added readonly modern Set composition and relation operations, including
+  protected results, set-like operands, iterator cleanup, and aligned types.
+- Prevented Date conversion methods from redispatching to source-owned method
+  overrides with a mutable receiver.
+- Added native prototype inventory tests so new platform methods require an
+  explicit safety classification.
+
 ## 2.0.0 - 2026-09-03
 
 ### Breaking Changes

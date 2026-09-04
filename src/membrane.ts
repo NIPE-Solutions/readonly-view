@@ -1,8 +1,14 @@
 import { isObjectLike, unsupportedKind } from './classify';
 import { DirectMutationError, UnsupportedTypeError } from './errors';
+import {
+    nativeMemberKind,
+    type NativeKind,
+    type NativeMemberKind,
+} from './native-members';
 import type { DeepReadonly } from './public-types';
 
-const knownViews = new WeakSet<object>();
+const knownViewSources = new WeakMap<object, object>();
+const knownViewWrappers = new WeakMap<object, (value: unknown) => unknown>();
 type RuntimeConstructor = new (...arguments_: never[]) => object;
 const arrayMutators = new Set<PropertyKey>([
     'copyWithin',
@@ -15,6 +21,97 @@ const arrayMutators = new Set<PropertyKey>([
     'splice',
     'unshift',
 ]);
+const setCompositionMethods = new Set<PropertyKey>([
+    'difference',
+    'intersection',
+    'symmetricDifference',
+    'union',
+]);
+const setRelationMethods = new Set<PropertyKey>([
+    'isDisjointFrom',
+    'isSubsetOf',
+    'isSupersetOf',
+]);
+
+function unwrapKnownView(value: unknown): unknown {
+    return isObjectLike(value) ? (knownViewSources.get(value) ?? value) : value;
+}
+
+function wrapForKnownView(view: object, value: unknown): unknown {
+    return knownViewWrappers.get(view)?.(value) ?? value;
+}
+
+function nativeSetLikeIterator(value: unknown): unknown {
+    if (!isObjectLike(value)) return value;
+
+    const iterator = value;
+    const nextMethod = Reflect.get(iterator, 'next', iterator) as unknown;
+    const next = unwrapKnownView(nextMethod);
+    if (typeof next !== 'function') return value;
+
+    return {
+        next(): IteratorResult<unknown> {
+            const result: unknown = Reflect.apply(next, iterator, []);
+            if (!isObjectLike(result)) return result as IteratorResult<unknown>;
+            const done: unknown = Reflect.get(result, 'done', result);
+            if (done) return { done: true, value: undefined };
+            return {
+                done: false,
+                value: unwrapKnownView(Reflect.get(result, 'value', result)),
+            };
+        },
+        get return(): unknown {
+            const returnMethod = Reflect.get(
+                iterator,
+                'return',
+                iterator,
+            ) as unknown;
+            const callable = unwrapKnownView(returnMethod);
+            if (typeof callable !== 'function') return returnMethod;
+            return (...arguments_: unknown[]): unknown => {
+                const result: unknown = Reflect.apply(
+                    callable,
+                    iterator,
+                    arguments_,
+                );
+                return result;
+            };
+        },
+        [Symbol.iterator]() {
+            return this;
+        },
+    };
+}
+
+function nativeSetOperand(value: unknown): unknown {
+    if (!isObjectLike(value)) return value;
+
+    const receiver = value;
+    return {
+        get size(): unknown {
+            const size: unknown = Reflect.get(receiver, 'size', receiver);
+            return size;
+        },
+        get has(): unknown {
+            const method = Reflect.get(receiver, 'has', receiver) as unknown;
+            const callable = unwrapKnownView(method);
+            if (typeof callable !== 'function') return method;
+            return (member: unknown) => {
+                const result: unknown = Reflect.apply(callable, receiver, [
+                    wrapForKnownView(receiver, member),
+                ]);
+                return result;
+            };
+        },
+        get keys(): unknown {
+            const method = Reflect.get(receiver, 'keys', receiver) as unknown;
+            const callable = unwrapKnownView(method);
+            if (typeof callable !== 'function') return method;
+            return () =>
+                nativeSetLikeIterator(Reflect.apply(callable, receiver, []));
+        },
+    };
+}
 
 function objectKind(source: object): string {
     if (Array.isArray(source)) return 'Array';
@@ -48,8 +145,19 @@ function mutation(
     throw new DirectMutationError(details);
 }
 
+function requiredNativeMemberKind(
+    kind: NativeKind,
+    property: PropertyKey,
+): Exclude<NativeMemberKind, 'unsupported'> {
+    const memberKind = nativeMemberKind(kind, property);
+    if (memberKind === undefined || memberKind === 'unsupported') {
+        throw new UnsupportedTypeError(`${kind}.${String(property)}`);
+    }
+    return memberKind;
+}
+
 export function isKnownReadonlyView(value: unknown): boolean {
-    return isObjectLike(value) && knownViews.has(value);
+    return isObjectLike(value) && knownViewSources.has(value);
 }
 
 export interface Membrane {
@@ -152,36 +260,48 @@ export function createMembrane(): Membrane {
         property: PropertyKey,
         receiver: object,
     ): unknown {
-        if (
-            property === 'size' &&
-            descriptorOwner(source, property) === Map.prototype
-        ) {
-            return source.size;
+        const owner = descriptorOwner(source, property);
+        const classifiedKind = nativeMemberKind('Map', property);
+        if (owner !== null && classifiedKind === 'mutator') {
+            return cachedMethod(
+                source,
+                property,
+                () => () => mutation(source, String(property)),
+            );
         }
-        if (
-            property !== 'set' &&
-            property !== 'delete' &&
-            property !== 'clear' &&
-            descriptorOwner(source, property) !== Map.prototype
-        ) {
+        if (owner !== Map.prototype) {
             return wrap(Reflect.get(source, property, receiver));
         }
+
+        const memberKind = requiredNativeMemberKind('Map', property);
+        if (memberKind === 'special' && property === 'size') return source.size;
+        if (memberKind === 'read' && property === 'constructor') {
+            return wrap(Reflect.get(source, property, receiver));
+        }
+        if (memberKind === 'special' && property === Symbol.toStringTag) {
+            return Reflect.get(source, property, source);
+        }
+
         return cachedMethod(source, property, () => {
-            if (
-                property === 'set' ||
-                property === 'delete' ||
-                property === 'clear'
-            ) {
+            if (memberKind === 'mutator') {
                 return () => mutation(source, String(property));
             }
-            if (property === 'get') {
+            const method = Reflect.get(source, property, source) as (
+                ...arguments_: unknown[]
+            ) => unknown;
+            if (memberKind === 'special' && property === 'get') {
                 return (key: unknown) =>
-                    wrap(source.get(unwrapSameMembrane(key)));
+                    wrap(
+                        Reflect.apply(method, source, [
+                            unwrapSameMembrane(key),
+                        ]),
+                    );
             }
-            if (property === 'has') {
-                return (key: unknown) => source.has(unwrapSameMembrane(key));
+            if (memberKind === 'special' && property === 'has') {
+                return (key: unknown) =>
+                    Reflect.apply(method, source, [unwrapSameMembrane(key)]);
             }
-            if (property === 'forEach') {
+            if (memberKind === 'special' && property === 'forEach') {
                 return (
                     callback: (
                         value: unknown,
@@ -189,26 +309,31 @@ export function createMembrane(): Membrane {
                         map: object,
                     ) => void,
                     thisArgument?: unknown,
-                ) =>
-                    source.forEach((value, key) =>
-                        Reflect.apply(callback, thisArgument, [
-                            wrap(value),
-                            wrap(key),
-                            receiver,
-                        ]),
+                ) => {
+                    return Reflect.apply(method, source, [
+                        (value: unknown, key: unknown) =>
+                            Reflect.apply(callback, thisArgument, [
+                                wrap(value),
+                                wrap(key),
+                                receiver,
+                            ]),
+                    ]);
+                };
+            }
+            if (
+                memberKind === 'special' &&
+                (property === Symbol.iterator ||
+                    property === 'entries' ||
+                    property === 'keys' ||
+                    property === 'values')
+            ) {
+                return () =>
+                    wrapIterator(
+                        Reflect.apply(method, source, []) as Iterator<unknown>,
                     );
             }
-            const method: unknown = Reflect.get(source, property, source);
-            return typeof method === 'function'
-                ? () =>
-                      wrapIterator(
-                          Reflect.apply(
-                              method,
-                              source,
-                              [],
-                          ) as Iterator<unknown>,
-                      )
-                : wrap(method);
+
+            throw new UnsupportedTypeError(`Map.${String(property)}`);
         });
     }
 
@@ -217,33 +342,37 @@ export function createMembrane(): Membrane {
         property: PropertyKey,
         receiver: object,
     ): unknown {
-        if (
-            property === 'size' &&
-            descriptorOwner(source, property) === Set.prototype
-        ) {
-            return source.size;
+        const owner = descriptorOwner(source, property);
+        const classifiedKind = nativeMemberKind('Set', property);
+        if (owner !== null && classifiedKind === 'mutator') {
+            return cachedMethod(
+                source,
+                property,
+                () => () => mutation(source, String(property)),
+            );
         }
-        if (
-            property !== 'add' &&
-            property !== 'delete' &&
-            property !== 'clear' &&
-            descriptorOwner(source, property) !== Set.prototype
-        ) {
+        if (owner !== Set.prototype) {
             return wrap(Reflect.get(source, property, receiver));
         }
+
+        const memberKind = requiredNativeMemberKind('Set', property);
+        if (memberKind === 'special' && property === 'size') return source.size;
+        if (memberKind === 'read' && property === 'constructor') {
+            return wrap(Reflect.get(source, property, receiver));
+        }
+        if (memberKind === 'special' && property === Symbol.toStringTag) {
+            return Reflect.get(source, property, source);
+        }
+
         return cachedMethod(source, property, () => {
-            if (
-                property === 'add' ||
-                property === 'delete' ||
-                property === 'clear'
-            ) {
+            if (memberKind === 'mutator') {
                 return () => mutation(source, String(property));
             }
-            if (property === 'has') {
+            if (memberKind === 'special' && property === 'has') {
                 return (value: unknown) =>
                     source.has(unwrapSameMembrane(value));
             }
-            if (property === 'forEach') {
+            if (memberKind === 'special' && property === 'forEach') {
                 return (
                     callback: (
                         value: unknown,
@@ -251,8 +380,8 @@ export function createMembrane(): Membrane {
                         set: object,
                     ) => void,
                     thisArgument?: unknown,
-                ) =>
-                    source.forEach((value) => {
+                ) => {
+                    return source.forEach((value) => {
                         const wrapped = wrap(value);
                         Reflect.apply(callback, thisArgument, [
                             wrapped,
@@ -260,18 +389,41 @@ export function createMembrane(): Membrane {
                             receiver,
                         ]);
                     });
+                };
             }
             const method: unknown = Reflect.get(source, property, source);
-            return typeof method === 'function'
-                ? () =>
-                      wrapIterator(
-                          Reflect.apply(
-                              method,
-                              source,
-                              [],
-                          ) as Iterator<unknown>,
-                      )
-                : wrap(method);
+            if (typeof method !== 'function') return wrap(method);
+
+            if (setCompositionMethods.has(property)) {
+                return (other: unknown) => {
+                    const result: unknown = Reflect.apply(method, source, [
+                        nativeSetOperand(other),
+                    ]);
+                    return wrap(result);
+                };
+            }
+            if (setRelationMethods.has(property)) {
+                return (other: unknown) => {
+                    const result: unknown = Reflect.apply(method, source, [
+                        nativeSetOperand(other),
+                    ]);
+                    return result;
+                };
+            }
+            if (
+                memberKind === 'special' &&
+                (property === Symbol.iterator ||
+                    property === 'entries' ||
+                    property === 'keys' ||
+                    property === 'values')
+            ) {
+                return () =>
+                    wrapIterator(
+                        Reflect.apply(method, source, []) as Iterator<unknown>,
+                    );
+            }
+
+            throw new UnsupportedTypeError(`Set.${String(property)}`);
         });
     }
 
@@ -282,11 +434,28 @@ export function createMembrane(): Membrane {
     ): unknown {
         const native = descriptorOwner(source, property) === Date.prototype;
         if (!native) return wrap(Reflect.get(source, property, receiver));
+        const memberKind = requiredNativeMemberKind('Date', property);
+        if (memberKind === 'read' && property === 'constructor') {
+            return wrap(Reflect.get(source, property, receiver));
+        }
         const value: unknown = Reflect.get(source, property, source);
         if (typeof value !== 'function') return wrap(value);
         return cachedMethod(source, property, () => {
-            if (typeof property === 'string' && property.startsWith('set')) {
-                return () => mutation(source, property);
+            if (memberKind === 'mutator') {
+                return () => mutation(source, String(property));
+            }
+            if (
+                memberKind === 'special' &&
+                (property === 'toJSON' || property === Symbol.toPrimitive)
+            ) {
+                return (...arguments_: unknown[]) => {
+                    const result: unknown = Reflect.apply(
+                        value,
+                        receiver,
+                        arguments_,
+                    );
+                    return wrap(result);
+                };
             }
             return (...arguments_: unknown[]) => {
                 const result: unknown = Reflect.apply(
@@ -301,7 +470,7 @@ export function createMembrane(): Membrane {
 
     function wrap<T>(value: T): DeepReadonly<T> {
         if (!isObjectLike(value)) return value as DeepReadonly<T>;
-        if (knownViews.has(value)) return value as DeepReadonly<T>;
+        if (knownViewSources.has(value)) return value as DeepReadonly<T>;
 
         const rejectedKind = unsupportedKind(value);
         if (rejectedKind !== undefined) {
@@ -443,7 +612,8 @@ export function createMembrane(): Membrane {
         viewReference.current = view;
         sourceToView.set(source, view);
         viewToSource.set(view, source);
-        knownViews.add(view);
+        knownViewSources.set(view, source);
+        knownViewWrappers.set(view, wrap);
         return view as DeepReadonly<T>;
     }
 
@@ -454,7 +624,7 @@ export function createMembrane(): Membrane {
 }
 
 export function readonlyView<T>(source: T): DeepReadonly<T> {
-    if (!isObjectLike(source) || knownViews.has(source)) {
+    if (!isObjectLike(source) || knownViewSources.has(source)) {
         return source as DeepReadonly<T>;
     }
 
