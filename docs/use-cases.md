@@ -63,7 +63,7 @@ rejectsDirectMutation(() => {
 console.log(state.connected); // true: the existing view stays live
 ```
 
-`connect(user)` deliberately preserves the supplied object reference. That means a caller retaining `user` can still mutate that separate alias. ReadonlyView closes the public `state` path; it does not fix input ownership by itself.
+`connect(user)` deliberately preserves the supplied object reference. That means a consumer retaining `user` can still mutate that separate alias. ReadonlyView closes the public `state` path; it does not fix input ownership by itself.
 
 ## Internal registry
 
@@ -153,7 +153,7 @@ source.configuration.retries = 4; // allowed host-side mutation
 
 ### Response caches
 
-A client or service owns a response cache while middleware and diagnostics inspect it. A cache snapshot is stale after a revalidation or eviction; publish a view when readers need current entries but must not alter cache contents.
+A client or service owns a response cache while middleware and diagnostics inspect it. A cache snapshot is stale after a revalidation or eviction; publish a view when consumers need current entries but must not alter cache contents.
 
 ### Configuration managers
 

@@ -4,7 +4,7 @@ ReadonlyView is one way to model ownership. It is not a replacement for every fo
 
 ## TypeScript `readonly`
 
-Choose TypeScript `readonly` when you need compile-time guidance for a typed API and runtime enforcement is not required. It does not change JavaScript behavior: a caller can still mutate a value at runtime if it has a mutable reference or casts around the type.
+Choose TypeScript `readonly` when you need compile-time guidance for a typed API and runtime enforcement is not required. It does not change JavaScript behavior: a consumer can still mutate a value at runtime if it has a mutable reference or casts around the type.
 
 ## `Object.freeze`
 
@@ -16,7 +16,11 @@ Choose deep freeze when a value must become deeply immutable and neither owner n
 
 ## Cloning and snapshots
 
-Choose cloning or snapshots when consumers need a historical, isolated point in time. A snapshot intentionally becomes stale after its creation; make a new one when the source changes. Use an Immer-style immutable-update workflow when producing successive states from convenient draft mutations is the primary job.
+Choose cloning or snapshots when consumers need a historical, isolated point in time. A snapshot intentionally becomes stale after its creation; make a new one when the source changes.
+
+## Immer-style updates
+
+Choose an Immer-style immutable-update workflow when the primary job is to produce successor state from convenient draft mutations. The draft is a controlled working surface for an update; the result is a new state value, often with structural sharing. This is a state-production workflow, not a way to publish one owner-controlled live graph to consumers.
 
 ## ReadonlyView
 
@@ -33,4 +37,4 @@ Choose ReadonlyView when an owner continues to mutate a live graph, consumers mu
 | Traversal/copying       | None                  | None                       | Eager traversal      | Produces/copies state   | Lazy, on access |
 | New-state production    | No                    | No                         | No                   | Yes                     | No              |
 
-These approaches solve different ownership and lifecycle problems. Immer helps create new state; snapshots preserve a past state; freezing constrains the source itself; TypeScript guides typed callers. ReadonlyView exposes an existing owner-controlled graph without granting mutation through the view.
+These approaches solve different ownership and lifecycle problems. Immer helps create new state; snapshots preserve a past state; freezing constrains the source itself; TypeScript guides typed consumers. ReadonlyView exposes an existing owner-controlled graph without granting mutation through the view.
