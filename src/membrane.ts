@@ -60,6 +60,23 @@ function nativeSetLikeIterator(value: unknown): unknown {
                 value: unwrapKnownView(Reflect.get(result, 'value', result)),
             };
         },
+        get return(): unknown {
+            const returnMethod = Reflect.get(
+                iterator,
+                'return',
+                iterator,
+            ) as unknown;
+            const callable = unwrapKnownView(returnMethod);
+            if (typeof callable !== 'function') return returnMethod;
+            return (...arguments_: unknown[]): unknown => {
+                const result: unknown = Reflect.apply(
+                    callable,
+                    iterator,
+                    arguments_,
+                );
+                return result;
+            };
+        },
         [Symbol.iterator]() {
             return this;
         },
@@ -426,6 +443,19 @@ export function createMembrane(): Membrane {
         return cachedMethod(source, property, () => {
             if (memberKind === 'mutator') {
                 return () => mutation(source, String(property));
+            }
+            if (
+                memberKind === 'special' &&
+                (property === 'toJSON' || property === Symbol.toPrimitive)
+            ) {
+                return (...arguments_: unknown[]) => {
+                    const result: unknown = Reflect.apply(
+                        value,
+                        receiver,
+                        arguments_,
+                    );
+                    return wrap(result);
+                };
             }
             return (...arguments_: unknown[]) => {
                 const result: unknown = Reflect.apply(

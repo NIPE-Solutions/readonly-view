@@ -28,8 +28,11 @@ type DeepReadonlySetMethods<Value> = {
     isDisjointFrom(other: ReadonlySetOperand<unknown>): boolean;
 };
 
-type DeepReadonlySetView<Value> = DeepReadonlySetMethods<Value> &
-    ReadonlySet<Value>;
+type DeepReadonlySetView<Value> = Omit<
+    ReadonlySet<Value>,
+    keyof DeepReadonlySetMethods<Value>
+> &
+    DeepReadonlySetMethods<Value>;
 
 type DeepReadonlySet<Value> = 'union' extends keyof ReadonlySet<unknown>
     ? DeepReadonlySetView<DeepReadonly<Value>>

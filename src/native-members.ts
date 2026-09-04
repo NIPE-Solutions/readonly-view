@@ -79,7 +79,6 @@ const datePolicy: NativeMemberPolicy = {
         'toDateString',
         'toGMTString',
         'toISOString',
-        'toJSON',
         'toLocaleDateString',
         'toLocaleString',
         'toLocaleTimeString',
@@ -106,7 +105,7 @@ const datePolicy: NativeMemberPolicy = {
         'setUTCSeconds',
         'setYear',
     ]),
-    special: new Set<PropertyKey>([Symbol.toPrimitive]),
+    special: new Set<PropertyKey>(['toJSON', Symbol.toPrimitive]),
     unsupported: new Set<PropertyKey>(),
 };
 

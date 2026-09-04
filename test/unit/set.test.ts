@@ -159,4 +159,80 @@ describe('Set', () => {
             expect(invoke(independentOperandView)).toBe(expected);
         },
     );
+
+    it.each(['raw', 'readonly-view'] as const)(
+        'isSupersetOf closes a %s set-like operand iterator on early exit',
+        (operandKind) => {
+            if (!hasSetMethod('isSupersetOf')) return;
+
+            let closed = false;
+            const operand: SetLike<number> = {
+                size: 1,
+                has() {
+                    return false;
+                },
+                keys() {
+                    return (function* () {
+                        try {
+                            yield 2;
+                        } finally {
+                            closed = true;
+                        }
+                    })();
+                },
+            };
+            const suppliedOperand =
+                operandKind === 'readonly-view'
+                    ? readonlyView(operand)
+                    : operand;
+            const view = readonlyView(
+                new Set([1]),
+            ) as unknown as ModernSet<number>;
+
+            expect(view.isSupersetOf(suppliedOperand as SetLike<number>)).toBe(
+                false,
+            );
+            expect(closed).toBe(true);
+        },
+    );
+
+    it.each(['raw', 'readonly-view'] as const)(
+        'isSupersetOf forwards a %s iterator return error with its original receiver',
+        (operandKind) => {
+            if (!hasSetMethod('isSupersetOf')) return;
+
+            const returnError = new Error('iterator return failed');
+            let usedOriginalReceiver = false;
+            const iterator = {
+                next() {
+                    return { done: false as const, value: 2 };
+                },
+                return(this: unknown) {
+                    usedOriginalReceiver = this === iterator;
+                    throw returnError;
+                },
+            };
+            const operand: SetLike<number> = {
+                size: 1,
+                has() {
+                    return false;
+                },
+                keys() {
+                    return iterator;
+                },
+            };
+            const suppliedOperand =
+                operandKind === 'readonly-view'
+                    ? readonlyView(operand)
+                    : operand;
+            const view = readonlyView(
+                new Set([1]),
+            ) as unknown as ModernSet<number>;
+
+            expect(() =>
+                view.isSupersetOf(suppliedOperand as SetLike<number>),
+            ).toThrow(returnError);
+            expect(usedOriginalReceiver).toBe(true);
+        },
+    );
 });
