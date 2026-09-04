@@ -78,6 +78,11 @@ published 2.0.1 containing these commits:
 These guarantees assume untampered intrinsics and do not turn ReadonlyView into
 a sandbox.
 
+The dependent product-story work expands the README, website, use-case, and API
+content without further runtime or package-export changes. It must not merge or
+deploy until this candidate is published and verified as `2.0.1`; that work did
+not publish a new npm release.
+
 ### Current local candidate evidence
 
 The following evidence was collected from this 2.0.1 worktree on 2026-09-04
