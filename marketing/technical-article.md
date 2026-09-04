@@ -200,7 +200,7 @@ proxy.clear(); // would run with the mutable Map as its receiver
 
 Supported built-ins therefore need dedicated adapters. For a Map, readonly operations can run with the valid native receiver, but returned keys and values must be wrapped. `set`, `delete`, and `clear` must reject before touching the source. Set needs the analogous treatment. Date read methods require a real Date receiver, while its `set*` family must be blocked.
 
-There is another distinction inside a native instance: an exact built-in method may receive the internal-slot source when its semantics have been reviewed, but a custom method attached by user code should still receive the readonly view. Otherwise an innocent-looking custom method becomes a source-bound escape.
+There is another distinction inside a native instance: an inventoried member reached on the expected intrinsic prototype may receive the internal-slot source when its semantics have been reviewed, while a custom method attached by user code should still receive the readonly view. This relies on the ordinary-library assumption that those intrinsic prototypes have not been tampered with before access. Otherwise an innocent-looking custom method becomes a source-bound escape.
 
 Other built-ins need their own designs. Typed arrays and `DataView` expose mutable backing memory. URL objects have native setters and mutators. Promise, WeakMap, WeakSet, RegExp, Error, ArrayBuffer, and similar objects have semantics that a generic object membrane cannot safely guess. Returning a half-working Proxy is worse than producing an explicit unsupported-type error.
 

@@ -4,6 +4,14 @@ This record deliberately separates the released `2.0.0` baseline from the
 unpublished `2.0.1` hardening candidate. Evidence or guarantees in one section
 must not be attributed to the other version.
 
+Delivery order: release and verify the native-hardening candidate first. Do not
+merge `docs/product-story-final`, deploy its hardening-specific site/README
+claims, or post its marketing drafts until
+`npm view @nipe-solutions/readonly-view@2.0.1 version` and
+`npm view @nipe-solutions/readonly-view dist-tags.latest` both return `2.0.1`.
+This records a required handoff order; it does not state that `2.0.1` is
+published.
+
 ## Released baseline: 2.0.0
 
 ### Public release evidence

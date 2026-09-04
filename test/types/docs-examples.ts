@@ -64,9 +64,12 @@ const pluginSource: PluginContext = { configuration: { retries: 3 } };
 const pluginContext = readonlyView(pluginSource);
 const plugin = new Plugin();
 plugin.initialize(pluginContext);
-plugin.retries();
+plugin.retries(); // 3
+
+pluginSource.configuration.retries = 4;
+plugin.retries(); // 4: the retained plugin context stays live
 
 // @ts-expect-error readonly nested plugin configuration
 pluginContext.configuration.retries = 5;
 
-pluginSource.configuration.retries = 5;
+plugin.retries(); // 4: the rejected consumer update preserves the owner value

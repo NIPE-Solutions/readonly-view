@@ -44,14 +44,15 @@ Always include the limit alongside the promise: ReadonlyView does not freeze the
 
 ## Recommended publication sequence
 
-1. **Run the launch checklist below.** Confirm the package version, links, examples, claims, and target-channel rules on the actual publication date.
-2. **Publish the GitHub/NIPE announcement.** Treat it as the short source-of-truth launch note and link it from later posts if the destination supports that pattern.
-3. **Publish the technical article.** It supplies the reasoning behind the implementation and gives technical readers something useful beyond the announcement.
-4. **Publish the comparison article.** It catches readers who have the ownership problem but may need a snapshot, freeze, or immutable-update workflow instead.
-5. **Publish the SDK tutorial.** It turns the positioning into an adoptable pattern with consumer-side and owner-side tests.
-6. **Publish the personal and NIPE LinkedIn posts at different times.** The personal post tells the engineering story; the company post frames the library as a focused open-source primitive.
-7. **Publish one short-form thread.** Choose the launch thread in `launch-announcement.md` for product context or `mutation-escape-thread.md` for Proxy mechanics. Do not post both back-to-back.
-8. **Adapt the community draft separately for each community.** Answer questions in the venue and disclose the author/project relationship where required.
+1. **Release first.** Merge and release the native-hardening branch before this product-story branch. Do not merge this branch to `main`, deploy its hardening claims to the production site, or post any hardening-dependent draft until `npm view @nipe-solutions/readonly-view@2.0.1 version` and `npm view @nipe-solutions/readonly-view dist-tags.latest` both return `2.0.1`.
+2. **Run the launch checklist below.** After that npm verification, confirm the package version, links, examples, claims, and target-channel rules on the actual publication date.
+3. **Publish the GitHub/NIPE announcement.** Treat it as the short source-of-truth launch note and link it from later posts if the destination supports that pattern.
+4. **Publish the technical article.** It supplies the reasoning behind the implementation and gives technical readers something useful beyond the announcement.
+5. **Publish the comparison article.** It catches readers who have the ownership problem but may need a snapshot, freeze, or immutable-update workflow instead.
+6. **Publish the SDK tutorial.** It turns the positioning into an adoptable pattern with consumer-side and owner-side tests.
+7. **Publish the personal and NIPE LinkedIn posts at different times.** The personal post tells the engineering story; the company post frames the library as a focused open-source primitive.
+8. **Publish one short-form thread.** Choose the launch thread in `launch-announcement.md` for product context or `mutation-escape-thread.md` for Proxy mechanics. Do not post both back-to-back.
+9. **Adapt the community draft separately for each community.** Answer questions in the venue and disclose the author/project relationship where required.
 
 This is a sequence, not an automation schedule. A human chooses destinations and dates.
 
@@ -101,6 +102,7 @@ It is accurate to say that supported view paths reject writes, nested wrapping i
 
 Complete this checklist separately for every destination immediately before publication:
 
+- [ ] Verify release order: the native-hardening branch was released before this product-story branch is merged or deployed, and `npm view @nipe-solutions/readonly-view@2.0.1 version` plus `npm view @nipe-solutions/readonly-view dist-tags.latest` both return `2.0.1`. Until both are true, do not merge, deploy, or post hardening-dependent claims.
 - [ ] Confirm the destination’s current rules for promotional content, disclosures, links, hashtags, formatting, post length, code blocks, edits, and cross-posting.
 - [ ] Disclose the author’s or NIPE Solutions’ relationship to ReadonlyView wherever the channel requires it; when uncertain, disclose plainly.
 - [ ] Open every included link in a clean browser session and verify that it is live, public, canonical, and points to the intended version.

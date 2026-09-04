@@ -35,6 +35,10 @@ class Plugin {
         this.#context = context;
     }
 
+    retries() {
+        return this.#context.configuration.retries;
+    }
+
     configureRetries(retries: number) {
         return Reflect.set(this.#context.configuration, 'retries', retries);
     }
@@ -189,12 +193,16 @@ it('matches the registry read-only Map example', () => {
 
 it('matches the plugin read-only context example', () => {
     const source: PluginContext = { configuration: { retries: 3 } };
-    const sourceSnapshot = { configuration: { ...source.configuration } };
     const plugin = new Plugin();
     const context = readonlyView(source);
 
     plugin.initialize(context);
 
+    expect(plugin.retries()).toBe(3);
+    source.configuration.retries = 4;
+    expect(plugin.retries()).toBe(4);
+
     rejectsDirectMutation(() => plugin.configureRetries(5));
-    expect(source).toEqual(sourceSnapshot);
+    expect(source.configuration.retries).toBe(4);
+    expect(plugin.retries()).toBe(4);
 });

@@ -135,18 +135,34 @@ function rejectsDirectMutation(action: () => void) {
 
 type PluginContext = { configuration: { retries: number } };
 
-function initialize(context: DeepReadonly<PluginContext>) {
-    console.log(context.configuration.retries);
-    rejectsDirectMutation(() => {
-        // @ts-expect-error readonly nested plugin configuration
-        context.configuration.retries = 5;
+class Plugin {
+    #context: DeepReadonly<PluginContext> = readonlyView({
+        configuration: { retries: 0 },
     });
-    console.log(context.configuration.retries); // 3
+
+    initialize(context: DeepReadonly<PluginContext>) {
+        this.#context = context;
+    }
+
+    retries() {
+        return this.#context.configuration.retries;
+    }
+
+    configureRetries(retries: number) {
+        return Reflect.set(this.#context.configuration, 'retries', retries);
+    }
 }
 
 const source: PluginContext = { configuration: { retries: 3 } };
-initialize(readonlyView(source));
+const plugin = new Plugin();
+plugin.initialize(readonlyView(source));
+console.log(plugin.retries()); // 3
+
 source.configuration.retries = 4; // allowed host-side mutation
+console.log(plugin.retries()); // 4: the retained context stays live
+
+rejectsDirectMutation(() => plugin.configureRetries(5));
+console.log(plugin.retries()); // 4: the rejected plugin update preserves it
 ```
 
 ## Other good fits
