@@ -84,6 +84,33 @@ test('documentation has no narrow-screen overflow', async ({ page }) => {
     expect(widths.body).toBeLessThanOrEqual(widths.viewport);
 });
 
+test('sticky documentation navigation keeps keyboard focus visible in a short viewport', async ({
+    page,
+}) => {
+    await page.setViewportSize({ width: 800, height: 600 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(websiteOrigin + '/#docs');
+
+    const navigation = page.getByRole('navigation', {
+        name: 'Documentation',
+    });
+    const links = navigation.getByRole('link');
+    const firstLink = links.first();
+    const lastLink = links.last();
+    const linkCount = await links.count();
+
+    await firstLink.focus();
+    for (let index = 1; index < linkCount; index += 1) {
+        await page.keyboard.press('Tab');
+    }
+
+    await expect(lastLink).toBeFocused();
+    const bounds = await lastLink.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.y).toBeGreaterThanOrEqual(6);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(594);
+});
+
 const legalRoutes = [
     ['/privacy/', 'Privacy Policy', 'Deutsch'],
     ['/impressum/', 'Impressum', 'Deutsch'],

@@ -78,6 +78,11 @@ class DirectMutationError extends Error {
     readonly operation: string;
     readonly property?: PropertyKey;
     readonly objectKind: string;
+    constructor(details: {
+        readonly operation: string;
+        readonly property?: PropertyKey;
+        readonly objectKind: string;
+    });
 }
 ```
 
@@ -120,12 +125,13 @@ Collection and object operations can have different operation/property combinati
 class UnsupportedTypeError extends Error {
     readonly name: 'UnsupportedTypeError';
     readonly kind: string;
+    constructor(kind: string);
 }
 ```
 
 ### Purpose
 
-Signals that ReadonlyView cannot safely protect a native or otherwise unsupported value.
+Signals that ReadonlyView cannot safely protect a native or otherwise unsupported value, or that a sensitive built-in exposes an unclassified native member.
 
 ### Minimal example
 
@@ -146,19 +152,37 @@ try {
 
 ### Guarantees
 
-The error has `name === 'UnsupportedTypeError'` and a `kind` naming the unsupported value type. Unsupported roots fail during wrapping; unsupported values deeper in an otherwise supported graph fail lazily when accessed.
+The error has `name === 'UnsupportedTypeError'` and a `kind` naming the unsupported value type or native member. Unsupported roots fail during wrapping; unsupported values deeper in an otherwise supported graph fail lazily when accessed. An unclassified Map, Set, or Date prototype member fails before its implementation is invoked with the mutable source.
 
 ### Edge cases
 
-Do not use this as a generic validation error. It is a deliberate fail-closed boundary for values that need dedicated handling. See the [supported type matrix](supported-types.md) for the current list and rationale.
+Do not use this as a generic validation error. It is a deliberate fail-closed boundary for values and native operations that need dedicated handling. See the [supported type matrix](supported-types.md) for the current list and rationale.
 
 ## `DeepReadonly`
 
 ### Signature
 
 ```ts
-type DeepReadonly<T> = /* recursive readonly view type */;
+type DeepReadonly<T> = T extends Primitive
+    ? T
+    : T extends abstract new (...arguments_: never[]) => object
+      ? DeepReadonlyConstructor<T>
+      : T extends (...arguments_: never[]) => unknown
+        ? DeepReadonlyFunction<T>
+        : T extends Date
+          ? ReadonlyDate
+          : T extends readonly unknown[]
+            ? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
+            : T extends ReadonlyMap<infer Key, infer Value>
+              ? ReadonlyMap<DeepReadonly<Key>, DeepReadonly<Value>>
+              : T extends ReadonlySet<infer Value>
+                ? DeepReadonlySet<Value>
+                : T extends object
+                  ? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
+                  : T;
 ```
+
+This is the exported conditional type; its private helper aliases are omitted here for readability. See the [source declaration](../src/public-types.ts) for those helper definitions.
 
 ### Purpose
 

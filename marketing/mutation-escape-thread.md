@@ -1,6 +1,8 @@
 # Seven escape routes from a naïve readonly Proxy
 
 > Publication status: unpublished draft for human review. Publish as one seven-part thread only after checking the destination’s current character-count, disclosure, link, and code-formatting rules.
+>
+> Publication gate: complete the [launch checklist](README.md#launch-checklist) for this draft before posting any part of the thread.
 
 ## 1/7 — The premise
 

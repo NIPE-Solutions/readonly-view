@@ -85,7 +85,15 @@ ReadonlyView only removes mutation capability from the view. The owner must stil
 
 ## Use ReadonlyView when
 
-Use it at an ownership boundary: an SDK publishes public state, a registry exposes its entries, or a host gives plugins context. Consumers can read live data without gaining a mutation path through the view; the owner must control any other mutable aliases.
+ReadonlyView is a strong fit when these five boundary conditions apply:
+
+1. One library, SDK, host, or subsystem clearly owns a mutable source graph.
+2. Consumers need one stable reference that reflects later owner updates.
+3. Consumers should inspect that graph, while writes through the published reference must fail at runtime and in TypeScript.
+4. The public graph primarily contains values in ReadonlyView’s documented support matrix.
+5. The owner can keep the source and other mutable aliases private or otherwise controlled.
+
+Typical boundaries include an SDK publishing public state, a registry exposing its entries, or a host giving plugins context.
 
 ```ts
 import {
@@ -168,6 +176,14 @@ These tools solve different problems. Immer produces new state through convenien
 
 ## Ownership mental model
 
+```text
+Owner code ──mutable reference──▶ Source object graph
+                                      │
+                                 readonlyView()
+                                      │
+Consumer code ◀──readonly access── Readonly membrane
+```
+
 `source` is owned by the library, host, or state container. `readonlyView(source)` gives a consumer a separate capability: read the same live graph. Owner writes are visible through the view; any write through the view is rejected. It does not make the source immutable or revoke mutable aliases the consumer already holds.
 
 ## Guarantees
@@ -187,7 +203,7 @@ Fully supported: primitives, plain/null-prototype objects, arrays/tuples, Map, S
 
 ## When not to use it
 
-Do not use ReadonlyView when you need immutable snapshots, structural sharing with new-state production, or a mechanism to prevent the owner from mutating data. Use a snapshot, persistent data structure, deep freeze, or a state-management tool designed for that job instead.
+Do not use ReadonlyView when you need immutable snapshots, structural sharing with new-state production, or a mechanism to prevent the owner from mutating data. ReadonlyView is not a security sandbox for hostile code; use process, realm, worker, permission, or protocol isolation for that threat model. Use a snapshot, persistent data structure, deep freeze, state-management tool, or isolation boundary designed for the actual job instead.
 
 ## Performance
 

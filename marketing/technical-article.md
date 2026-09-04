@@ -1,6 +1,8 @@
 # Why a readonly Proxy is harder than it looks
 
 > Publication status: unpublished draft for human review.
+>
+> Publication gate: complete the [launch checklist](README.md#launch-checklist) for this draft. Code fragments must keep their labels and be validated in a complete harness before publication.
 
 JavaScript makes the first version of a readonly object look almost trivial:
 
@@ -37,6 +39,8 @@ The SDK should be able to change `source.connection.status`. An application shou
 
 A shallow Proxy only protects the first object:
 
+_Illustrative fragment: this continues the preceding `naiveReadonly` and `source` example._
+
 ```ts
 const view = naiveReadonly(source);
 
@@ -44,6 +48,8 @@ view.connection.status = 'offline'; // writes to the raw nested object
 ```
 
 A membrane adds an identity-aware wrapping operation to every exposure route:
+
+_Illustrative fragment: this continues the same `source`/`view` example; validate it with the real package in a complete harness._
 
 ```ts
 const nested = view.connection;
@@ -62,6 +68,8 @@ That solves ordinary nested reads. Then reflection opens another door.
 ## Escape route 1: property descriptors
 
 `Object.getOwnPropertyDescriptor` can reveal a property without using an ordinary property read:
+
+_Illustrative fragment: include the earlier `naiveReadonly` declaration in the validation harness._
 
 ```ts
 const child = { editable: true };
@@ -136,6 +144,8 @@ The membrane also cannot remove effects that do not travel through `this`. A fun
 
 Collections expose values by calling consumer code. Consider an array method:
 
+_Illustrative fragment: import `readonlyView` in the validation harness._
+
 ```ts
 const source = [{ status: 'queued' }];
 const view = readonlyView(source);
@@ -154,6 +164,8 @@ Callbacks are easy to overlook because the collection method itself sounds read-
 ## Escape route 4: iterators
 
 Iteration is another value-returning API spread over several calls:
+
+_Illustrative fragment: define `view` with a supported collection fixture in the validation harness._
 
 ```ts
 const iterator = view.values();
@@ -179,6 +191,8 @@ proxy.get('selected'); // typically fails an incompatible-receiver check
 ```
 
 Blindly binding every Map method to the source fixes the receiver error but reintroduces mutation:
+
+_Illustrative fragment: this continues the preceding `proxy` example._
 
 ```ts
 proxy.clear(); // would run with the mutable Map as its receiver

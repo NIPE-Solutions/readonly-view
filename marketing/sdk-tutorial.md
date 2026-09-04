@@ -1,6 +1,8 @@
 # Build a live readonly state surface for a TypeScript SDK
 
 > Publication status: unpublished draft for human review.
+>
+> Publication gate: complete the [launch checklist](README.md#launch-checklist) for this draft. The examples form one sequential project; validate the assembled `client.ts` and test files rather than treating each intermediate excerpt as a standalone file.
 
 SDKs often need to expose state that they continue to own: connection status, the active account, cached capabilities, or recent events. The straightforward implementation returns an object. Unfortunately, that makes the SDK’s internal write path public too.
 
@@ -46,6 +48,8 @@ export class Client {
 
 `readonly state` only prevents replacing the `state` property on `Client`. It does not make the object stored there readonly:
 
+_Illustrative fragment: run this consumer code against the preceding `Client` fixture._
+
 ```ts
 const client = new Client();
 client.connect({ id: 'a-1', name: 'Alice' });
@@ -61,6 +65,8 @@ We could return a clone, but then a previously returned value would not reflect 
 ## 2. Keep the mutable source private
 
 First, separate the source from the public property:
+
+_Illustrative fragment: this intermediate class reuses the preceding `User` and `ClientState` declarations._
 
 ```ts
 export class Client {
@@ -141,6 +147,8 @@ For a richer input graph, validate and copy or normalize the parts the client in
 
 The view stays live, so consumers do not need to request a replacement after each owner action:
 
+_Illustrative fragment: run this consumer code against the complete `Client` from the preceding section._
+
 ```ts
 const client = new Client();
 const state = client.state;
@@ -160,7 +168,7 @@ Liveness is not reactivity. No event is emitted merely because the source change
 
 ## 5. Add consumer-boundary tests
 
-The first test proves both the TypeScript shape and the runtime rejection. This example uses Vitest, but the assertions translate directly to other test runners.
+The first test contains both type-level expectations and runtime assertions, but they are verified by separate tools. TypeScript checks the `@ts-expect-error` directives; Vitest transpiles the file and checks the emitted JavaScript behavior.
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -195,9 +203,18 @@ describe('Client public state', () => {
 });
 ```
 
-The `@ts-expect-error` comments do two jobs: the type-checking test fails if an assignment unexpectedly becomes legal, while the test runner still executes the emitted JavaScript and checks the runtime error. If your test pipeline separates type tests and runtime tests, keep equivalent cases in both suites.
+Run both checks explicitly (adjust the test path or project command to match your repository):
+
+```sh
+npx tsc --noEmit
+npx vitest run test/client.test.ts
+```
+
+`tsc --noEmit` fails if an `@ts-expect-error` write unexpectedly becomes legal or if another type error appears. Vitest does not perform that type check; it executes the runtime assertions that expect `DirectMutationError`. Keep both commands in CI.
 
 Use `Reflect.set` when you want a runtime-only assertion without deliberately writing type-invalid source:
+
+_Illustrative fragment: place this assertion inside the complete Vitest fixture above._
 
 ```ts
 expect(() => Reflect.set(client.state, 'connected', false)).toThrow(

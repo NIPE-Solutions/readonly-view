@@ -104,7 +104,7 @@ Complete this checklist separately for every destination immediately before publ
 - [ ] Confirm the destination’s current rules for promotional content, disclosures, links, hashtags, formatting, post length, code blocks, edits, and cross-posting.
 - [ ] Disclose the author’s or NIPE Solutions’ relationship to ReadonlyView wherever the channel requires it; when uncertain, disclose plainly.
 - [ ] Open every included link in a clean browser session and verify that it is live, public, canonical, and points to the intended version.
-- [ ] Install the released package in a clean temporary project and run every code example exactly as rendered by the destination.
+- [ ] Install the released package in a clean temporary project. Treat unlabelled executable code blocks as runnable examples and run them exactly as rendered. For every block labelled “illustrative fragment,” place it in a complete harness with its omitted imports, fixtures, and declarations, then type-check or run that harness as appropriate without removing the fragment label from the draft.
 - [ ] Check code fences, syntax highlighting, smart quotes, escaped characters, indentation, and line wrapping after pasting into the destination editor.
 - [ ] Confirm the released package name and exact version from npm, the supported Node/browser range from current documentation, and the publication date.
 - [ ] Revalidate any bundle-size, dependency, compatibility, or benchmark statement against the release artifact; delete it if it is not necessary.

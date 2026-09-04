@@ -224,6 +224,13 @@ code {
     top: 96px;
     align-self: start;
 }
+.sidebar {
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding: 6px;
+    scrollbar-gutter: stable;
+}
 .sidebar nav,
 .toc {
     display: grid;
@@ -487,7 +494,11 @@ footer nav {
         position: static;
         margin-bottom: 56px;
         border-bottom: 1px solid var(--rule);
-        padding-bottom: 24px;
+        max-height: none;
+        overflow-y: visible;
+        overscroll-behavior-y: auto;
+        padding: 0 0 24px;
+        scrollbar-gutter: auto;
     }
     .sidebar nav {
         grid-template-columns: 1fr 1fr;

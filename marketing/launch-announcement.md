@@ -1,6 +1,8 @@
 # Launch announcement drafts
 
 > Publication status: unpublished drafts for human review. Choose one channel section at a time; do not paste this whole file into a destination.
+>
+> Publication gate: complete the [launch checklist](README.md#launch-checklist) separately for every channel draft in this file. Unlabelled blocks are intended to run as rendered; labels identify intentionally abbreviated fragments.
 
 ## GitHub / NIPE announcement
 
@@ -48,6 +50,8 @@ An SDK owns live mutable state. The application needs to inspect that state. Ret
 
 That led me to build `@nipe-solutions/readonly-view`:
 
+_Illustrative fragment: add the import and `source` fixture in the publication validation harness._
+
 ```ts
 const state = readonlyView(source);
 
@@ -71,6 +75,8 @@ Repository: <https://github.com/NIPE-Solutions/readonly-view>
 Open-source release: `@nipe-solutions/readonly-view`.
 
 ReadonlyView is designed for public read surfaces where one component owns mutable data and another component needs a live view without receiving a mutation path.
+
+_Illustrative fragment: add the import and `internalState` fixture in the publication validation harness._
 
 ```ts
 const publicState = readonlyView(internalState);
@@ -99,6 +105,8 @@ An SDK owns mutable state. Consumers need to see the latest state—but returnin
 `@nipe-solutions/readonly-view` is built for that boundary. 🧵
 
 **2/5**
+
+_Illustrative fragment: add the import and `source` fixture in the publication validation harness._
 
 ```ts
 const state = readonlyView(source);
@@ -137,6 +145,8 @@ Disclosure: I am involved in ReadonlyView. I’m sharing it because the underlyi
 
 Suppose a library owns this state:
 
+_Illustrative two-part excerpt: the second block uses `source` from the first; validate both together in a complete harness._
+
 ```ts
 const source = {
     connection: { status: 'connecting' },
@@ -147,6 +157,8 @@ const source = {
 Returning `source` lets callers mutate library-owned data. A deep clone removes that mutation path but becomes stale as soon as the library connects or receives another peer. Deep-freezing the source also blocks the library’s own updates.
 
 `@nipe-solutions/readonly-view` takes a different approach: keep the source private and return a live readonly membrane.
+
+_Illustrative continuation: this block uses the `source` declared in the preceding excerpt._
 
 ```ts
 import { readonlyView } from '@nipe-solutions/readonly-view';

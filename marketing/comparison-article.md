@@ -1,6 +1,8 @@
 # Readonly, frozen, snapshot, or live view? Choose by lifecycle
 
 > Publication status: unpublished draft for human review.
+>
+> Publication gate: complete the [launch checklist](README.md#launch-checklist) for this draft. Code fragments must keep their labels and be validated in a complete harness before publication.
 
 “Make this readonly” can describe at least five different requirements:
 
@@ -91,6 +93,8 @@ Choose deep freeze when shared immutability is the goal. Do not choose it when t
 
 A snapshot separates the consumer’s value from future owner changes:
 
+_Illustrative fragment: define the initial `source` fixture in the publication validation harness._
+
 ```ts
 const snapshot = structuredClone(source);
 
@@ -109,6 +113,8 @@ Choose a snapshot when time and isolation matter more than liveness. Produce ano
 Immutable-update libraries solve a state-production problem. They let update code work against a controlled draft and then produce a new state value, often reusing unchanged structure.
 
 Conceptually:
+
+_Illustrative fragment: import `produce` and define `previousState` in the publication validation harness._
 
 ```ts
 const nextState = produce(previousState, (draft) => {
