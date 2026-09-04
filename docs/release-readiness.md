@@ -1,5 +1,9 @@
 # ReadonlyView 2.0 release readiness
 
+Patch status: `2.0.1` is an unpublished hardening candidate. It closes native
+method-dispatch escapes discovered during the post-release product-story audit.
+It must pass the full local and hosted release gates before publication.
+
 Status: **STABLE READY and released.** `2.0.0` passed its complete local gate on
 2026-09-03 using macOS 14.6.1 arm64, Node 24.20.0, and npm 11.19.0. It was
 published publicly with provenance, released on GitHub, and deployed to the

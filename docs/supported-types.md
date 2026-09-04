@@ -21,3 +21,9 @@ Unclassified native members on Map, Set, and Date also fail closed instead of
 being invoked with the mutable source as their receiver. Where the runtime
 provides modern Set composition methods, their fresh Set results and members
 remain readonly through the originating membrane.
+
+On TypeScript libraries that include the ES2025 Set methods, a ReadonlyView Set
+is intentionally not structurally assignable to the complete built-in
+`ReadonlySet<T>` interface. The built-in interface declares composition methods
+that return mutable `Set` instances; ReadonlyView returns readonly Set views
+instead. Ordinary readonly Set reads remain available.
