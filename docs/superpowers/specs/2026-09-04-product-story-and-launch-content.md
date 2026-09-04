@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-04
 
-**Status:** Proposed
+**Status:** Approved
 
 ## Objective
 
@@ -100,9 +100,9 @@ The home-page journey becomes:
    an SDK example.
 4. New “Built for public read surfaces” section with three materially distinct
    scenarios:
-   - SDK state that stays current after connection changes;
-   - a registry whose owner can register entries while consumers only read;
-   - a plugin context that prevents accidental configuration mutation.
+    - SDK state that stays current after connection changes;
+    - a registry whose owner can register entries while consumers only read;
+    - a plugin context that prevents accidental configuration mutation.
 5. New compact “Choose the right tool” comparison.
 6. New “Good fit / not a fit” section.
 7. Existing technical documentation, examples, support matrix, API, migration,
