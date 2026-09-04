@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta
             name="description"
-            content="ReadonlyView creates deeply readonly, lazy, live views over mutable JavaScript data."
+            content="Expose live internal data without exposing mutation."
         />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="ReadonlyView" />
@@ -15,7 +15,7 @@
         />
         <meta
             property="og:description"
-            content="A deeply readonly, lazy, live view over mutable JavaScript data."
+            content="Expose live internal data without exposing mutation."
         />
         <meta
             property="og:image"
@@ -58,9 +58,9 @@
                 <div class="hero-copy">
                     <h1>The source stays mutable.<br />The view does not.</h1>
                     <p class="lede">
-                        A deeply readonly, lazy, live view over mutable
-                        JavaScript data. Runtime enforcement and TypeScript
-                        types, without cloning or freezing.
+                        Expose live internal data without exposing mutation.
+                        ReadonlyView adds runtime enforcement and TypeScript
+                        types without cloning or freezing.
                     </p>
                     <div class="install">
                         <code>npm install @nipe-solutions/readonly-view</code
@@ -68,6 +68,17 @@
                             Copy
                         </button>
                     </div>
+                    <nav class="story-actions" aria-label="Get ReadonlyView">
+                        <a
+                            href="https://www.npmjs.com/package/@nipe-solutions/readonly-view"
+                            >Install from npm</a
+                        >
+                        <a href="#introduction">Read the documentation</a>
+                        <a
+                            href="https://github.com/NIPE-Solutions/readonly-view"
+                            >View on GitHub</a
+                        >
+                    </nav>
                 </div>
                 <div
                     class="membrane-demo"
@@ -118,7 +129,11 @@
             <div class="docs-layout" id="docs">
                 <aside class="sidebar">
                     <nav aria-label="Documentation">
-                        <a href="#introduction">Introduction</a
+                        <a href="#why">Why this exists</a
+                        ><a href="#use-cases">Use cases</a
+                        ><a href="#comparison">Choose the right tool</a
+                        ><a href="#fit">Good fit / Not a fit</a
+                        ><a href="#introduction">Introduction</a
                         ><a href="#ownership">Ownership model</a
                         ><a href="#examples">Examples</a
                         ><a href="#guarantees">Guarantees</a
@@ -138,6 +153,219 @@
                     </nav>
                 </aside>
                 <article class="content">
+                    <section class="story" id="why">
+                        <h2>Why this exists</h2>
+                        <p>
+                            An SDK often owns mutable connection state while
+                            applications need to inspect that state without
+                            rewriting it. Keep the source private and publish a
+                            live readonly view.
+                        </p>
+                        <pre><code>import { readonlyView } from '@nipe-solutions/readonly-view'
+
+class Client {
+  #state = { connected: false }
+  readonly state = readonlyView(this.#state)
+
+  connect() {
+    this.#state.connected = true
+  }
+}
+
+const client = new Client()
+const state = client.state
+client.connect()
+
+state.connected // true
+Reflect.set(state, 'connected', false) // throws</code></pre>
+                        <p class="note">
+                            ReadonlyView removes mutation capability from the
+                            view. The owner must still control any other mutable
+                            aliases.
+                        </p>
+                        <p>
+                            <a
+                                href="https://github.com/NIPE-Solutions/readonly-view/blob/main/docs/mental-model.md"
+                                >Read the ownership mental model</a
+                            >.
+                        </p>
+                    </section>
+                    <section class="story" id="use-cases">
+                        <h2>Built for public read surfaces</h2>
+                        <p>
+                            Use ReadonlyView at an ownership boundary where
+                            consumers need current data but should not gain a
+                            mutation path through the public view.
+                        </p>
+                        <div class="use-case-list">
+                            <article>
+                                <h3>SDK public state</h3>
+                                <p>
+                                    Connection state stays current after the SDK
+                                    connects, disconnects, or receives new data.
+                                    Applications can inspect it but cannot
+                                    rewrite it through <code>state</code>.
+                                </p>
+                            </article>
+                            <article>
+                                <h3>Internal registry</h3>
+                                <p>
+                                    The registry keeps adding entries through
+                                    its own API. Search and rendering code sees
+                                    the current <code>Map</code> without access
+                                    to mutating collection methods.
+                                </p>
+                            </article>
+                            <article>
+                                <h3>Plugin context</h3>
+                                <p>
+                                    A host can update source configuration while
+                                    plugins receive a live context that rejects
+                                    accidental nested configuration writes.
+                                </p>
+                            </article>
+                        </div>
+                        <p>
+                            <a
+                                href="https://github.com/NIPE-Solutions/readonly-view/blob/main/docs/use-cases.md"
+                                >Explore complete use-case examples</a
+                            >.
+                        </p>
+                    </section>
+                    <section class="story" id="comparison">
+                        <h2>Choose the right tool</h2>
+                        <p>
+                            Readonly and immutable tools solve different
+                            ownership and lifecycle problems. Match the tool to
+                            the behavior you need.
+                        </p>
+                        <div
+                            class="comparison-table"
+                            role="region"
+                            aria-label="Readonly ownership tool comparison"
+                            tabindex="0"
+                        >
+                            <table>
+                                <caption>
+                                    A compact guide to readonly and immutable
+                                    approaches
+                                </caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Need</th>
+                                        <th scope="col">Choose</th>
+                                        <th scope="col">Behavior</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Typed API guidance</td>
+                                        <td>
+                                            TypeScript <code>readonly</code>
+                                        </td>
+                                        <td>
+                                            Compile-time protection with no
+                                            runtime change.
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Shallow runtime boundary</td>
+                                        <td><code>Object.freeze</code></td>
+                                        <td>
+                                            Blocks top-level writes on the
+                                            frozen object; nested values remain
+                                            mutable.
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Deeply immutable value</td>
+                                        <td>Deep freeze</td>
+                                        <td>
+                                            Eagerly traverses the graph and also
+                                            prevents owner mutation.
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Historical or successor state</td>
+                                        <td>Snapshot / Immer</td>
+                                        <td>
+                                            Preserves a point in time or
+                                            produces new state.
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Owner-controlled live graph</td>
+                                        <td>ReadonlyView</td>
+                                        <td>
+                                            Adds lazy, deep protection through
+                                            the view while owner updates stay
+                                            live.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p>
+                            <a
+                                href="https://github.com/NIPE-Solutions/readonly-view/blob/main/docs/choosing-an-approach.md"
+                                >Read the detailed decision guide</a
+                            >.
+                        </p>
+                    </section>
+                    <section class="story" id="fit">
+                        <h2>Is ReadonlyView a fit?</h2>
+                        <div class="fit-grid">
+                            <div>
+                                <h3>Good fit</h3>
+                                <ul>
+                                    <li>
+                                        One owner controls the mutable source.
+                                    </li>
+                                    <li>
+                                        Existing views must reflect later owner
+                                        updates.
+                                    </li>
+                                    <li>
+                                        Public writes need TypeScript guidance
+                                        and runtime rejection.
+                                    </li>
+                                    <li>
+                                        Lazy wrapping is preferable to eager
+                                        traversal or copying.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3>Not a fit</h3>
+                                <ul>
+                                    <li>You need a point-in-time snapshot.</li>
+                                    <li>
+                                        You need structural sharing or new-state
+                                        production.
+                                    </li>
+                                    <li>
+                                        You need to prevent the owner from
+                                        mutating the source.
+                                    </li>
+                                    <li>
+                                        You need a security sandbox for hostile
+                                        JavaScript or other mutable aliases.
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <nav class="story-actions" aria-label="Next steps">
+                            <a
+                                href="https://www.npmjs.com/package/@nipe-solutions/readonly-view"
+                                >Install from npm</a
+                            >
+                            <a href="#introduction">Read the documentation</a>
+                            <a
+                                href="https://github.com/NIPE-Solutions/readonly-view"
+                                >View on GitHub</a
+                            >
+                        </nav>
+                    </section>
                     <section id="introduction">
                         <h2>Introduction</h2>
                         <p>
@@ -475,7 +703,11 @@ source.count += 1</code></pre>
                 </article>
                 <aside class="toc">
                     <p>On this page</p>
-                    <a href="#introduction">Introduction</a
+                    <a href="#why">Why this exists</a
+                    ><a href="#use-cases">Use cases</a
+                    ><a href="#comparison">Choose a tool</a
+                    ><a href="#fit">Fit</a
+                    ><a href="#introduction">Introduction</a
                     ><a href="#guarantees">Guarantees</a
                     ><a href="#types">Types</a><a href="#api">API</a>
                 </aside>
