@@ -34,6 +34,10 @@ class Plugin {
     initialize(context: DeepReadonly<PluginContext>) {
         this.#context = context;
     }
+
+    configureRetries(retries: number) {
+        return Reflect.set(this.#context.configuration, 'retries', retries);
+    }
 }
 
 function rejectsDirectMutation(action: () => void) {
@@ -163,7 +167,7 @@ it('matches the SDK public state example and its retained-alias limit', () => {
     expect(view.connected).toBe(true);
     expect(view.user).toEqual({ name: 'Bob' });
     rejectsDirectMutation(() => {
-        (view.user! as { name: string }).name = 'Eve';
+        Reflect.set(view.user!, 'name', 'Eve');
     });
     expect(user).toEqual(sourceUserSnapshot);
 });
@@ -191,8 +195,6 @@ it('matches the plugin read-only context example', () => {
 
     plugin.initialize(context);
 
-    rejectsDirectMutation(() => {
-        (context.configuration as { retries: number }).retries = 5;
-    });
+    rejectsDirectMutation(() => plugin.configureRetries(5));
     expect(source).toEqual(sourceSnapshot);
 });
