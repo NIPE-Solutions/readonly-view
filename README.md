@@ -203,7 +203,7 @@ Initial wrapping creates one proxy and does not walk the graph. Nested proxies a
 
 ## Documentation
 
-[Documentation site](https://readonly-view.nipesolutions.com) · [Architecture](docs/architecture.md) · [API](docs/api.md) · [Supported types](docs/supported-types.md) · [Compatibility](docs/compatibility.md) · [Migration](docs/migration-v1-v2.md) · [Security](docs/security-and-trust.md) · [Contributing](CONTRIBUTING.md)
+[Documentation site](https://readonly-view.nipesolutions.com) · [Mental model](docs/mental-model.md) · [Use cases](docs/use-cases.md) · [Choosing an approach](docs/choosing-an-approach.md) · [Architecture](docs/architecture.md) · [API](docs/api.md) · [Supported types](docs/supported-types.md) · [Compatibility](docs/compatibility.md) · [Migration](docs/migration-v1-v2.md) · [Security](docs/security-and-trust.md) · [Contributing](CONTRIBUTING.md)
 
 ## License
 
