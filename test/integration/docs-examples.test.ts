@@ -34,10 +34,16 @@ class Plugin {
     initialize(context: DeepReadonly<PluginContext>) {
         this.#context = context;
     }
+}
 
-    configureRetries(retries: number) {
-        return Reflect.set(this.#context.configuration, 'retries', retries);
+function rejectsDirectMutation(action: () => void) {
+    try {
+        action();
+    } catch (error) {
+        if (error instanceof DirectMutationError) return;
+        throw error;
     }
+    throw new Error('Expected DirectMutationError');
 }
 
 it('matches the primary ownership example', () => {
@@ -145,19 +151,20 @@ it('preserves shared identity across objects and collections', () => {
     );
 });
 
-it('matches the SDK public state example', () => {
+it('matches the SDK public state example and its retained-alias limit', () => {
     const client = new Client();
     const view = client.state;
     const user = { name: 'Alice' };
-    const sourceUserSnapshot = { ...user };
 
     client.connect(user);
+    user.name = 'Bob';
+    const sourceUserSnapshot = { ...user };
 
     expect(view.connected).toBe(true);
-    expect(view.user).toEqual({ name: 'Alice' });
-    expect(() => Reflect.set(view.user!, 'name', 'Eve')).toThrow(
-        DirectMutationError,
-    );
+    expect(view.user).toEqual({ name: 'Bob' });
+    rejectsDirectMutation(() => {
+        (view.user! as { name: string }).name = 'Eve';
+    });
     expect(user).toEqual(sourceUserSnapshot);
 });
 
@@ -169,9 +176,9 @@ it('matches the registry read-only Map example', () => {
 
     expect([...view.entries()]).toEqual([['primary', { name: 'Alice' }]]);
     const entriesBeforeRejection = [...view.entries()];
-    expect(() =>
+    rejectsDirectMutation(() =>
         (view as Map<string, { name: string }>).set('next', { name: 'Eve' }),
-    ).toThrow(DirectMutationError);
+    );
     expect([...view.entries()]).toEqual(entriesBeforeRejection);
     expect([...registry.entries.entries()]).toEqual(entriesBeforeRejection);
 });
@@ -180,9 +187,12 @@ it('matches the plugin read-only context example', () => {
     const source: PluginContext = { configuration: { retries: 3 } };
     const sourceSnapshot = { configuration: { ...source.configuration } };
     const plugin = new Plugin();
+    const context = readonlyView(source);
 
-    plugin.initialize(readonlyView(source));
+    plugin.initialize(context);
 
-    expect(() => plugin.configureRetries(5)).toThrow(DirectMutationError);
+    rejectsDirectMutation(() => {
+        (context.configuration as { retries: number }).retries = 5;
+    });
     expect(source).toEqual(sourceSnapshot);
 });

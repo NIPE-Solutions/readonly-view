@@ -1,14 +1,30 @@
 # ReadonlyView
 
-Expose data from a mutable owner without handing consumers a mutation capability. [ReadonlyView on npm](https://www.npmjs.com/package/@nipe-solutions/readonly-view) is a lazy, live, deeply readonly runtime membrane for TypeScript; it is not a state manager, clone, frozen snapshot, or mutation API. Read the [documentation](https://readonly-view.nipesolutions.com) or browse the [source on GitHub](https://github.com/NIPE-Solutions/readonly-view).
+Expose live internal data without exposing mutation. [ReadonlyView on npm](https://www.npmjs.com/package/@nipe-solutions/readonly-view) is a lazy, live, deeply readonly runtime membrane for TypeScript; it is not a state manager, clone, frozen snapshot, or mutation API. Read the [documentation](https://readonly-view.nipesolutions.com) or browse the [source on GitHub](https://github.com/NIPE-Solutions/readonly-view).
 
 ```ts
-import { readonlyView } from '@nipe-solutions/readonly-view';
+import {
+    DirectMutationError,
+    readonlyView,
+} from '@nipe-solutions/readonly-view';
+
+function rejectsDirectMutation(action: () => void) {
+    try {
+        action();
+    } catch (error) {
+        if (error instanceof DirectMutationError) return;
+        throw error;
+    }
+    throw new Error('Expected DirectMutationError');
+}
 
 const source = { user: { name: 'Alice', roles: ['admin'] } };
 const view = readonlyView(source);
 
-view.user.name = 'Bob'; // TypeScript error + DirectMutationError
+rejectsDirectMutation(() => {
+    // @ts-expect-error readonly view
+    view.user.name = 'Eve';
+});
 source.user.name = 'Bob';
 console.log(view.user.name); // Bob
 ```
@@ -26,10 +42,23 @@ Requires Node.js 22 or 24, or a current evergreen browser.
 
 ## Why this exists (SDK)
 
-SDKs often own a mutable connection state but should not let callers rewrite it. Keep the state private, publish a view, and update only through the owner API.
+SDKs often own mutable connection state but should not let consumers rewrite it through the public view. Keep the state private and publish a view; it gives consumers no new mutation path.
 
 ```ts
-import { readonlyView } from '@nipe-solutions/readonly-view';
+import {
+    DirectMutationError,
+    readonlyView,
+} from '@nipe-solutions/readonly-view';
+
+function rejectsDirectMutation(action: () => void) {
+    try {
+        action();
+    } catch (error) {
+        if (error instanceof DirectMutationError) return;
+        throw error;
+    }
+    throw new Error('Expected DirectMutationError');
+}
 
 class Client {
     #state = { connected: false, user: null as { name: string } | null };
@@ -45,16 +74,34 @@ const client = new Client();
 const state = client.state;
 client.connect({ name: 'Alice' });
 
-console.log(state.connected); // true: the view stays live
-state.user!.name = 'Eve'; // TypeScript error + DirectMutationError
+rejectsDirectMutation(() => {
+    // @ts-expect-error readonly SDK state
+    state.user!.name = 'Eve';
+});
+console.log(state.connected); // true: the view stays live after rejection
 ```
+
+ReadonlyView only removes mutation capability from the view. The owner must still control other mutable aliases: `connect(user)` above preserves the supplied object reference, so a consumer that retains `user` can still mutate it. Copy or normalize inputs when that is not acceptable.
 
 ## Use ReadonlyView when
 
-Use it at an ownership boundary: an SDK publishes public state, a registry exposes its entries, or a host gives plugins context. Consumers can read live data; the owner keeps every write path.
+Use it at an ownership boundary: an SDK publishes public state, a registry exposes its entries, or a host gives plugins context. Consumers can read live data without gaining a mutation path through the view; the owner must control any other mutable aliases.
 
 ```ts
-import { readonlyView } from '@nipe-solutions/readonly-view';
+import {
+    DirectMutationError,
+    readonlyView,
+} from '@nipe-solutions/readonly-view';
+
+function rejectsDirectMutation(action: () => void) {
+    try {
+        action();
+    } catch (error) {
+        if (error instanceof DirectMutationError) return;
+        throw error;
+    }
+    throw new Error('Expected DirectMutationError');
+}
 
 class Registry {
     #entries = new Map<string, { name: string }>();
@@ -67,17 +114,39 @@ class Registry {
 
 const registry = new Registry();
 registry.register('primary', { name: 'Alice' });
-registry.entries.set('next', { name: 'Eve' }); // TypeScript error + DirectMutationError
+rejectsDirectMutation(() => {
+    // @ts-expect-error readonly registry Map
+    registry.entries.set('next', { name: 'Eve' });
+});
+console.log(registry.entries.get('primary')?.name); // Alice
 ```
 
 ```ts
-import { readonlyView, type DeepReadonly } from '@nipe-solutions/readonly-view';
+import {
+    DirectMutationError,
+    readonlyView,
+    type DeepReadonly,
+} from '@nipe-solutions/readonly-view';
+
+function rejectsDirectMutation(action: () => void) {
+    try {
+        action();
+    } catch (error) {
+        if (error instanceof DirectMutationError) return;
+        throw error;
+    }
+    throw new Error('Expected DirectMutationError');
+}
 
 type PluginContext = { configuration: { retries: number } };
 
 function initialize(context: DeepReadonly<PluginContext>) {
     console.log(context.configuration.retries);
-    context.configuration.retries = 5; // TypeScript error + DirectMutationError
+    rejectsDirectMutation(() => {
+        // @ts-expect-error readonly nested plugin configuration
+        context.configuration.retries = 5;
+    });
+    console.log(context.configuration.retries); // 3
 }
 
 const source: PluginContext = { configuration: { retries: 3 } };
@@ -86,20 +155,20 @@ initialize(readonlyView(source));
 
 ## Comparison
 
-| Capability              | TypeScript `readonly` | `Object.freeze`      | Deep freeze          | Snapshot / Immer        | ReadonlyView    |
-| ----------------------- | --------------------- | -------------------- | -------------------- | ----------------------- | --------------- |
-| Compile-time protection | Yes, where typed      | No                   | No                   | Optional types          | Yes             |
-| Runtime depth           | None                  | Shallow              | Deep                 | Snapshot/draft-specific | Deep            |
-| Owner retains mutation  | Yes                   | No                   | No                   | Yes, on original        | Yes             |
-| Live owner updates      | Yes                   | N/A: owner is frozen | N/A: owner is frozen | No: new snapshot/state  | Yes             |
-| Traversal/copying       | None                  | None                 | Eager traversal      | Produces/copies state   | Lazy, on access |
-| New-state production    | No                    | No                   | No                   | Yes                     | No              |
+| Capability              | TypeScript `readonly` | `Object.freeze`            | Deep freeze          | Snapshot / Immer        | ReadonlyView    |
+| ----------------------- | --------------------- | -------------------------- | -------------------- | ----------------------- | --------------- |
+| Compile-time protection | Yes, where typed      | No                         | No                   | Optional types          | Yes             |
+| Runtime depth           | None                  | Shallow                    | Deep                 | Snapshot/draft-specific | Deep            |
+| Owner retains mutation  | Yes                   | Top-level no; nested yes   | No                   | Yes, on original        | Yes             |
+| Live owner updates      | Yes                   | Nested updates remain live | N/A: owner is frozen | No: new snapshot/state  | Yes             |
+| Traversal/copying       | None                  | None                       | Eager traversal      | Produces/copies state   | Lazy, on access |
+| New-state production    | No                    | No                         | No                   | Yes                     | No              |
 
 These tools solve different problems. Immer produces new state through convenient mutations; ReadonlyView exposes existing owner-controlled data without granting mutation through the view.
 
 ## Ownership mental model
 
-`source` is owned by the library, host, or state container. `readonlyView(source)` gives a consumer a separate capability: read the same live graph. Owner writes are visible through the view; any write through the view is rejected. It does not make the source immutable.
+`source` is owned by the library, host, or state container. `readonlyView(source)` gives a consumer a separate capability: read the same live graph. Owner writes are visible through the view; any write through the view is rejected. It does not make the source immutable or revoke mutable aliases the consumer already holds.
 
 ## Guarantees
 
