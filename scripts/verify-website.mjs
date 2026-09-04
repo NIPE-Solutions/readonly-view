@@ -32,6 +32,19 @@ for (const [path, expectedContent] of pages) {
     }
 }
 
+for (const [path, html] of pageHtml) {
+    for (const content of [
+        '<span>Primitives</span>',
+        'href="https://opensource.nipesolutions.com"',
+        'NIPE Open Source',
+    ]) {
+        if (!html.includes(content))
+            throw new Error(`${path} is missing header content: ${content}`);
+    }
+    if (html.includes('NIPE primitives / 01'))
+        throw new Error(`${path} contains the retired header label`);
+}
+
 const home = pageHtml.get('index.html');
 if (home === undefined) throw new Error('Missing built home page');
 
