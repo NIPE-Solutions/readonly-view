@@ -2,7 +2,8 @@
 
 import type { DeepReadonly } from '../../src/index';
 
-type ModernSetMethod =
+type ReplacedSetMethod =
+    | 'forEach'
     | 'union'
     | 'intersection'
     | 'difference'
@@ -11,7 +12,7 @@ type ModernSetMethod =
     | 'isSupersetOf'
     | 'isDisjointFrom';
 
-type ReadonlySetBase<Value> = Omit<ReadonlySet<Value>, ModernSetMethod>;
+type ReadonlySetBase<Value> = Omit<ReadonlySet<Value>, ReplacedSetMethod>;
 
 declare const setView: DeepReadonly<Set<{ id: number }>>;
 declare const otherSet: ReadonlySet<{ label: string }>;
@@ -39,6 +40,14 @@ const relationResult: boolean = setView.isSubsetOf(otherSet);
 const supersetResult: boolean = setView.isSupersetOf(otherSet);
 const disjointResult: boolean = setView.isDisjointFrom(otherSet);
 const chainedResult = unionResult.difference(otherSet);
+setView.forEach((value, duplicateValue, callbackSet) => {
+    const callbackUnionResult = callbackSet.union(
+        new Set([value, duplicateValue]),
+    );
+
+    // @ts-expect-error callback Set composition results stay readonly
+    callbackUnionResult.add(value);
+});
 declare const unionReturnTypeResult: ReturnType<typeof setView.union>;
 declare const intersectionReturnTypeResult: ReturnType<
     typeof setView.intersection

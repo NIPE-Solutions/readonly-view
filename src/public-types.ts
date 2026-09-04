@@ -11,6 +11,14 @@ type ReadonlySetOperand<Value> = {
 };
 
 type DeepReadonlySetMethods<Value> = {
+    forEach(
+        callbackfn: (
+            value: Value,
+            value2: Value,
+            set: DeepReadonlySetView<Value>,
+        ) => void,
+        thisArg?: unknown,
+    ): void;
     union<Other>(
         other: ReadonlySetOperand<Other>,
     ): DeepReadonlySetView<Value | DeepReadonly<Other>>;
