@@ -4,6 +4,14 @@ This record deliberately separates the released `2.0.0` baseline from the
 unpublished `2.0.1` hardening candidate. Evidence or guarantees in one section
 must not be attributed to the other version.
 
+Delivery order: release and verify the native-hardening candidate first. Do not
+merge `docs/product-story-final`, deploy its hardening-specific site/README
+claims, or post its marketing drafts until
+`npm view @nipe-solutions/readonly-view@2.0.1 version` and
+`npm view @nipe-solutions/readonly-view dist-tags.latest` both return `2.0.1`.
+This records a required handoff order; it does not state that `2.0.1` is
+published.
+
 ## Released baseline: 2.0.0
 
 ### Public release evidence
@@ -77,6 +85,11 @@ published 2.0.1 containing these commits:
 
 These guarantees assume untampered intrinsics and do not turn ReadonlyView into
 a sandbox.
+
+The dependent product-story work expands the README, website, use-case, and API
+content without further runtime or package-export changes. It must not merge or
+deploy until this candidate is published and verified as `2.0.1`; that work did
+not publish a new npm release.
 
 ### Current local candidate evidence
 

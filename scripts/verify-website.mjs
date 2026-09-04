@@ -35,6 +35,54 @@ for (const [path, expectedContent] of pages) {
 const home = pageHtml.get('index.html');
 if (home === undefined) throw new Error('Missing built home page');
 
+for (const id of ['why', 'use-cases', 'comparison', 'fit']) {
+    if (!home.includes(`id="${id}"`))
+        throw new Error('Missing website story section: #' + id);
+}
+
+for (const content of [
+    'Expose live internal data without exposing mutation.',
+    'SDK public state',
+    'Internal registry',
+    'Plugin context',
+    'Good fit',
+    'Not a fit',
+]) {
+    if (!home.includes(content))
+        throw new Error('Missing website story content: ' + content);
+}
+
+for (const destination of [
+    'https://www.npmjs.com/package/@nipe-solutions/readonly-view',
+    'https://github.com/NIPE-Solutions/readonly-view',
+    'https://github.com/NIPE-Solutions/readonly-view/blob/main/docs/mental-model.md',
+    'https://github.com/NIPE-Solutions/readonly-view/blob/main/docs/use-cases.md',
+    'https://github.com/NIPE-Solutions/readonly-view/blob/main/docs/choosing-an-approach.md',
+]) {
+    if (!home.includes(`href="${destination}"`))
+        throw new Error(
+            'Home page does not link story destination: ' + destination,
+        );
+}
+
+const descriptionTags = home.match(/<meta\b[^>]*>/g) ?? [];
+for (const [attribute, value] of [
+    ['name', 'description'],
+    ['property', 'og:description'],
+]) {
+    const tag = descriptionTags.find((candidate) =>
+        candidate.includes(`${attribute}="${value}"`),
+    );
+    if (
+        tag === undefined ||
+        !tag.includes(
+            'content="Expose live internal data without exposing mutation."',
+        )
+    ) {
+        throw new Error(`Home page has incorrect ${value} metadata`);
+    }
+}
+
 for (const heading of [
     'Ownership model',
     'Supported types',

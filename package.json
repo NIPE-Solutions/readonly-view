@@ -51,10 +51,18 @@
     },
     "keywords": [
         "readonly",
+        "deep-readonly",
+        "immutable",
+        "immutability",
         "proxy",
         "membrane",
         "typescript",
-        "immutable-view"
+        "javascript",
+        "live-view",
+        "runtime",
+        "object",
+        "map",
+        "set"
     ],
     "author": "Nicholas Petrasek",
     "license": "MIT",

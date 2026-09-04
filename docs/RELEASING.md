@@ -92,3 +92,14 @@ npm versions are immutable: never attempt to republish an existing version. If t
 is defective, deprecate it with a precise warning when appropriate, publish a
 reviewed patch version, and move `latest` only through the guarded workflow. Do
 not deprecate or otherwise mutate the old `immuview` package.
+
+## Product-story delivery gate
+
+The native-hardening release branch must land and publish before the
+`docs/product-story-final` branch is merged or deployed. Until
+`npm view @nipe-solutions/readonly-view@2.0.1 version` and
+`npm view @nipe-solutions/readonly-view dist-tags.latest` both return `2.0.1`,
+do not merge the product-story branch to `main`, deploy its hardening-specific
+site/README claims, or publish its marketing drafts. This is a handoff order,
+not evidence that `2.0.1` has been published: complete the verification in step
+6 before proceeding with the product-story delivery.

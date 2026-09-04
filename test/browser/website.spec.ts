@@ -20,14 +20,95 @@ test('documentation navigation and live demo work', async ({ page }) => {
     ).toBeAttached();
 });
 
+test('story navigation and calls to action lead to their destinations', async ({
+    page,
+}) => {
+    await page.goto(websiteOrigin + '/');
+
+    const sidebar = page.getByRole('navigation', { name: 'Documentation' });
+    for (const [name, id] of [
+        ['Why this exists', 'why'],
+        ['Use cases', 'use-cases'],
+        ['Choose the right tool', 'comparison'],
+        ['Good fit / Not a fit', 'fit'],
+    ] as const) {
+        await sidebar.getByRole('link', { name, exact: true }).click();
+        await expect(page).toHaveURL(`${websiteOrigin}/#${id}`);
+        await expect(page.locator(`#${id}`)).toBeInViewport();
+    }
+
+    for (const [name, href] of [
+        [
+            'Install from npm',
+            'https://www.npmjs.com/package/@nipe-solutions/readonly-view',
+        ],
+        ['Read the documentation', '#introduction'],
+        ['View on GitHub', 'https://github.com/NIPE-Solutions/readonly-view'],
+    ] as const) {
+        const links = page.getByRole('link', { name, exact: true });
+        await expect(links).toHaveCount(2);
+        for (const link of await links.all()) {
+            await expect(link).toHaveAttribute('href', href);
+        }
+    }
+});
+
+test('story sections have one visible level-two heading each', async ({
+    page,
+}) => {
+    await page.goto(websiteOrigin + '/');
+
+    for (const [id, name] of [
+        ['why', 'Why this exists'],
+        ['use-cases', 'Built for public read surfaces'],
+        ['comparison', 'Choose the right tool'],
+        ['fit', 'Is ReadonlyView a fit?'],
+    ] as const) {
+        const headings = page
+            .locator(`#${id}`)
+            .getByRole('heading', { level: 2 });
+        await expect(headings).toHaveCount(1);
+        await expect(headings).toHaveText(name);
+        await expect(headings).toBeVisible();
+    }
+});
+
 test('documentation has no narrow-screen overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(websiteOrigin + '/');
+    await page.goto(websiteOrigin + '/#use-cases');
+    await expect(page.locator('#use-cases')).toBeInViewport();
     const widths = await page.evaluate(() => ({
         body: document.body.scrollWidth,
         viewport: document.documentElement.clientWidth,
     }));
     expect(widths.body).toBeLessThanOrEqual(widths.viewport);
+});
+
+test('sticky documentation navigation keeps keyboard focus visible in a short viewport', async ({
+    page,
+}) => {
+    await page.setViewportSize({ width: 800, height: 600 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(websiteOrigin + '/#docs');
+
+    const navigation = page.getByRole('navigation', {
+        name: 'Documentation',
+    });
+    const links = navigation.getByRole('link');
+    const firstLink = links.first();
+    const lastLink = links.last();
+    const linkCount = await links.count();
+
+    await firstLink.focus();
+    for (let index = 1; index < linkCount; index += 1) {
+        await page.keyboard.press('Tab');
+    }
+
+    await expect(lastLink).toBeFocused();
+    const bounds = await lastLink.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.y).toBeGreaterThanOrEqual(6);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(594);
 });
 
 const legalRoutes = [
