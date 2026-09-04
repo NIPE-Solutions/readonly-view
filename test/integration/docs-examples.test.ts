@@ -1,5 +1,44 @@
 import { expect, it } from 'vitest';
-import { DirectMutationError, readonlyView } from '../../src/index';
+import {
+    DirectMutationError,
+    readonlyView,
+    type DeepReadonly,
+} from '../../src/index';
+
+class Client {
+    #state = { connected: false, user: null as { name: string } | null };
+    readonly state = readonlyView(this.#state);
+
+    connect(user: { name: string }) {
+        this.#state.connected = true;
+        this.#state.user = user;
+    }
+}
+
+class Registry {
+    #entries = new Map<string, { name: string }>();
+    readonly entries = readonlyView(this.#entries);
+
+    register(key: string, value: { name: string }) {
+        this.#entries.set(key, value);
+    }
+}
+
+type PluginContext = { configuration: { retries: number } };
+
+class Plugin {
+    #context: DeepReadonly<PluginContext> = readonlyView({
+        configuration: { retries: 0 },
+    });
+
+    initialize(context: DeepReadonly<PluginContext>) {
+        this.#context = context;
+    }
+
+    configureRetries(retries: number) {
+        return Reflect.set(this.#context.configuration, 'retries', retries);
+    }
+}
 
 it('matches the primary ownership example', () => {
     const source = { user: { name: 'Alice', roles: ['admin'] } };
@@ -104,4 +143,46 @@ it('preserves shared identity across objects and collections', () => {
     expect(() => Reflect.set(view.items[0]!, 'id', 2)).toThrow(
         DirectMutationError,
     );
+});
+
+it('matches the SDK public state example', () => {
+    const client = new Client();
+    const view = client.state;
+    const user = { name: 'Alice' };
+    const sourceUserSnapshot = { ...user };
+
+    client.connect(user);
+
+    expect(view.connected).toBe(true);
+    expect(view.user).toEqual({ name: 'Alice' });
+    expect(() => Reflect.set(view.user!, 'name', 'Eve')).toThrow(
+        DirectMutationError,
+    );
+    expect(user).toEqual(sourceUserSnapshot);
+});
+
+it('matches the registry read-only Map example', () => {
+    const registry = new Registry();
+    const view = registry.entries;
+
+    registry.register('primary', { name: 'Alice' });
+
+    expect([...view.entries()]).toEqual([['primary', { name: 'Alice' }]]);
+    const entriesBeforeRejection = [...view.entries()];
+    expect(() =>
+        (view as Map<string, { name: string }>).set('next', { name: 'Eve' }),
+    ).toThrow(DirectMutationError);
+    expect([...view.entries()]).toEqual(entriesBeforeRejection);
+    expect([...registry.entries.entries()]).toEqual(entriesBeforeRejection);
+});
+
+it('matches the plugin read-only context example', () => {
+    const source: PluginContext = { configuration: { retries: 3 } };
+    const sourceSnapshot = { configuration: { ...source.configuration } };
+    const plugin = new Plugin();
+
+    plugin.initialize(readonlyView(source));
+
+    expect(() => plugin.configureRetries(5)).toThrow(DirectMutationError);
+    expect(source).toEqual(sourceSnapshot);
 });
