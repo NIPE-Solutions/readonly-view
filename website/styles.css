@@ -221,6 +221,32 @@ code {
     color: var(--blue);
     border-bottom-color: var(--blue);
 }
+.support-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-top: 28px;
+}
+.support-actions a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 12px 16px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 650;
+}
+.support-actions a:first-child {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: white;
+}
+.support-actions a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
 .docs-layout {
     max-width: 1440px;
     margin: auto;

@@ -1,5 +1,64 @@
 import { expect, test } from '@playwright/test';
 
+for (const width of [1280, 390, 320]) {
+    test(`homepage support links remain usable at ${width}px`, async ({
+        page,
+        browserName,
+    }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(websiteOrigin + '/');
+        const support = page.getByRole('region', {
+            name: 'Useful in your project?',
+        });
+        await expect(support).toBeVisible();
+        expect(
+            await support.evaluate((node) => node.previousElementSibling?.id),
+        ).toBe('use-cases');
+        const star = support.getByRole('link', {
+            name: 'Star on GitHub',
+            exact: true,
+        });
+        const explore = support.getByRole('link', {
+            name: 'Explore NIPE Open Source',
+            exact: true,
+        });
+        await expect(star).toHaveAttribute(
+            'href',
+            'https://github.com/NIPE-Solutions/readonly-view',
+        );
+        await expect(explore).toHaveAttribute(
+            'href',
+            'https://opensource.nipesolutions.com',
+        );
+        for (const link of [star, explore]) {
+            const bounds = await link.boundingBox();
+            expect(bounds!.height).toBeGreaterThanOrEqual(44);
+            expect(bounds!.width).toBeGreaterThanOrEqual(44);
+            expect(bounds!.x).toBeGreaterThanOrEqual(0);
+            expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+            expect(await link.evaluate((node) => node.tagName)).toBe('A');
+        }
+        await star.focus();
+        // macOS Safari navigates native links with Option+Tab.
+        const tab =
+            browserName === 'webkit' && process.platform === 'darwin'
+                ? 'Alt+Tab'
+                : 'Tab';
+        await page.keyboard.press(tab);
+        await expect(explore).toBeFocused();
+        await page.keyboard.press(`Shift+${tab}`);
+        await expect(star).toBeFocused();
+        expect(
+            await star.evaluate((node) => getComputedStyle(node).outlineStyle),
+        ).not.toBe('none');
+        if (process.env.CTA_SCREENSHOT_DIR) {
+            await support.screenshot({
+                path: `${process.env.CTA_SCREENSHOT_DIR}/${test.info().project.name}-${width}.png`,
+            });
+        }
+    });
+}
+
 const websiteOrigin = 'http://127.0.0.1:42873';
 
 test('documentation navigation and live demo work', async ({ page }) => {
@@ -86,6 +145,7 @@ test('documentation has no narrow-screen overflow', async ({ page }) => {
 
 test('sticky documentation navigation keeps keyboard focus visible in a short viewport', async ({
     page,
+    browserName,
 }) => {
     await page.setViewportSize({ width: 800, height: 600 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -98,10 +158,15 @@ test('sticky documentation navigation keeps keyboard focus visible in a short vi
     const firstLink = links.first();
     const lastLink = links.last();
     const linkCount = await links.count();
+    // macOS Safari navigates native links with Option+Tab.
+    const tab =
+        browserName === 'webkit' && process.platform === 'darwin'
+            ? 'Alt+Tab'
+            : 'Tab';
 
     await firstLink.focus();
     for (let index = 1; index < linkCount; index += 1) {
-        await page.keyboard.press('Tab');
+        await page.keyboard.press(tab);
     }
 
     await expect(lastLink).toBeFocused();
@@ -140,6 +205,9 @@ for (const [route, heading, language] of legalRoutes) {
             });
             await page.setViewportSize({ width, height: 844 });
             await page.goto(websiteOrigin + route);
+            await expect(
+                page.getByRole('region', { name: 'Useful in your project?' }),
+            ).toHaveCount(0);
             await expect(
                 page.getByRole('heading', { level: 1, name: heading }),
             ).toBeVisible();
